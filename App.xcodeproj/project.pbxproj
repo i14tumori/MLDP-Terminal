@@ -14,6 +14,7 @@
 		C077D94E211AAE1500D81491 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C077D94C211AAE1500D81491 /* LaunchScreen.storyboard */; };
 		C077D959211AAE1500D81491 /* AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C077D958211AAE1500D81491 /* AppTests.swift */; };
 		C077D964211AAE1500D81491 /* AppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C077D963211AAE1500D81491 /* AppUITests.swift */; };
+		C077D972211AB8EB00D81491 /* SelectDeviceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C077D971211AB8EB00D81491 /* SelectDeviceViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +48,7 @@
 		C077D95F211AAE1500D81491 /* AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C077D963211AAE1500D81491 /* AppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUITests.swift; sourceTree = "<group>"; };
 		C077D965211AAE1500D81491 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C077D971211AB8EB00D81491 /* SelectDeviceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectDeviceViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +105,7 @@
 				C077D94A211AAE1500D81491 /* Assets.xcassets */,
 				C077D94C211AAE1500D81491 /* LaunchScreen.storyboard */,
 				C077D94F211AAE1500D81491 /* Info.plist */,
+				C077D971211AB8EB00D81491 /* SelectDeviceViewController.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -257,6 +260,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C077D946211AAE1400D81491 /* ViewController.swift in Sources */,
+				C077D972211AB8EB00D81491 /* SelectDeviceViewController.swift in Sources */,
 				C077D944211AAE1400D81491 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -431,6 +435,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = ZJ7YM6298U;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -448,6 +453,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = ZJ7YM6298U;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

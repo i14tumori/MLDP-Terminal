@@ -7,12 +7,28 @@
 //
 
 import UIKit
+import CoreBluetooth
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
+    // ViewController間で受け渡しが必要な変数一覧
+    var isScanning = false
+    var centralManager: CBCentralManager!
+    var peripheral: CBPeripheral!
+    var myservice: CBService!
+    var settingCharacteristic: CBCharacteristic!
+    var outputCharacteristic: CBCharacteristic!
+    
+    // 発見したペリフェラルを格納するための配列
+    var discoveredDevice: [CBPeripheral] = []
+    
+    let peripheralDeviceName = "BLE_DEVICE"
+    let mldpService_UUID = CBUUID(string: "00035B03-58E6-07DD-021A-08123A000300")
+    let mldpCharacteristic_UUID1 = CBUUID(string: "00035B03-58E6-07DD-021A-08123A000301")
+    let mldpCharacteristic_UUID2 = CBUUID(string: "00035B03-58E6-07DD-021A-08123A0003FF")
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.

@@ -31,6 +31,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // TextViewを編集できないようにする
         textview.isEditable = false
+ 
+        // TextViewに枠線をつける
+        textview.layer.borderColor = UIColor.blue.cgColor
+        textview.layer.borderWidth = 0.5
         
         // インスタンスの生成および初期化
         appDelegate.centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
@@ -236,8 +240,32 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         let data = characteristic.value
         let dataString = String(data: data!, encoding: String.Encoding.utf8)
         
+        print("dataString:\(String(describing: dataString))")
+        
         // textViewに読み込みデータを書き込む
-        textview.text = textview.text! + dataString!
+        // 空白文字の背景をグレーにし、カーソル代わりにする
+        let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray]
+        let attrText = NSMutableAttributedString(string: " ", attributes: stringAttributes)
+        
+        // カーソル用空白文字を取り除く
+        var getText = textview.text!
+        if getText.count != 0 {
+            getText = String(getText.prefix(getText.count-1))
+        }
+        
+        let planeText = NSMutableAttributedString(string: getText + dataString!)
+        
+        // 文字列とカーソルの結合用定数
+        let text = NSMutableAttributedString()
+        
+        // 文字列とカーソルを結合する
+        text.append(planeText)
+        text.append(attrText)
+        
+        // textviewに設定する
+        textview.attributedText = text
+        // フォントを再設定する
+        textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
     }
     
 }

@@ -47,7 +47,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         tableview?.reloadData()
     }
     
-    // debaisugasenntakusaretatoki
+    // デバイスが選択されたとき
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         appDelegate.peripheral = appDelegate.discoveredDevice[indexPath.row]
         

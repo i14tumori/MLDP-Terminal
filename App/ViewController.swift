@@ -12,6 +12,7 @@ import CoreBluetooth
 class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITextFieldDelegate {
        
     var response = ""
+    let maxLength = 18
 
     @IBOutlet weak var textfield: UITextField!
     @IBOutlet weak var textview: UITextView!
@@ -25,16 +26,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         textfield.delegate = self
         
-        // テキストのフォント設定
-        textfield.font = UIFont(name: "CourierNewPSMT", size: textfield.font!.pointSize)
-        textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
-        
         // TextViewを編集できないようにする
         textview.isEditable = false
  
         // TextViewに枠線をつける
         textview.layer.borderColor = UIColor.blue.cgColor
         textview.layer.borderWidth = 0.5
+        
+        // カーソル表示
+        let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray]
+        let attrText = NSMutableAttributedString(string: " ", attributes: stringAttributes)
+        textview.attributedText = attrText
+        
+        // テキストのフォント設定
+        textfield.font = UIFont(name: "CourierNewPSMT", size: textfield.font!.pointSize)
+        textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
         
         // インスタンスの生成および初期化
         appDelegate.centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
@@ -60,24 +66,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // キーボードを閉じる
         self.view.endEditing(true)
     }
-    
-    // textfieldの値が変更される度に呼び出される
-    // 第一引数:変更前文字列，第二引数:変更される文字列のインデックス範囲
-    // 第三引数:新しい文字列
-    // trueを返すと入力確定，falseを返すと入力確定を拒否
-    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        // 入力文字数の最大値
-        let maxLength: Int = 18
-        // 入力済み文字と入力された文字を合わせて取得
-        let str = textField.text! + string
-        // 文字数がmaxLength以下ならtrue
-        if str.characters.count < maxLength {
-            return true
-        }
-        print("最大文字数超過")
-        return false
-    }
-    
+   
     // textField入力でreturn(改行)が押されたとき
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         print("textfield should return")
@@ -97,11 +86,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         
-        // 書き込みデータの準備(文字を文字コードに変換?)
-        var str = textfield.text!
-        str = str + "\r\n"
-        let data = str.data(using: String.Encoding.utf8)
+        // 送信文字数の制限をなくす(本来は(改行コード抜きで)18文字)
+        let txText = textfield.text!
+        /* 商　quotient 余り　remainder */
+        let remainder = txText.count % maxLength
         
+        for i in stride(from: 0, to: txText.count - remainder, by: maxLength) {
+            let splitText = txText[txText.index(txText.startIndex, offsetBy: i)..<txText.index(txText.startIndex, offsetBy: i + maxLength)]
+            let data = splitText.data(using: String.Encoding.utf8)
+            // ペリフェラルにデータを書き込む
+            appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
+        }
+        
+        let splitText = String(txText.suffix(remainder)) + "\r\n"
+        let data = splitText.data(using: String.Encoding.utf8)
         // ペリフェラルにデータを書き込む
         appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
         
@@ -111,8 +109,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     @IBAction func clearButtonTapped(_ sender: UIButton) {
         print("clear button tapped")
-        textview.text = ""
         textfield.text = ""
+        // カーソル表示
+        let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray]
+        let attrText = NSMutableAttributedString(string: " ", attributes: stringAttributes)
+        textview.attributedText = attrText
+        
+        // フォントを再設定する
+        textview.font = UIFont(name: "CourierNewPSMT", size: textfield.font!.pointSize)
     }
     
     @IBAction func scanButtonTapped(_ sender: UIButton) {
@@ -236,6 +240,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         
+        textview.isScrollEnabled = false
+        
         //  読み込みデータの取り出し(文字コードを文字に変換?)
         let data = characteristic.value
         let dataString = String(data: data!, encoding: String.Encoding.utf8)
@@ -253,19 +259,31 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             getText = String(getText.prefix(getText.count-1))
         }
         
-        let planeText = NSMutableAttributedString(string: getText + dataString!)
+        let plainText = NSMutableAttributedString(string: getText + dataString!)
         
         // 文字列とカーソルの結合用定数
         let text = NSMutableAttributedString()
         
         // 文字列とカーソルを結合する
-        text.append(planeText)
+        text.append(plainText)
         text.append(attrText)
         
         // textviewに設定する
         textview.attributedText = text
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
+        
+        // 画面のスクロール
+        scrollToButtom()
+    }
+    
+    func scrollToButtom() {
+        textview.selectedRange = NSRange(location: textview.text.count, length: 0)
+        textview.isScrollEnabled = true
+        
+        let scrollY = textview.contentSize.height - textview.bounds.height
+        let scrollPoint = CGPoint(x: 0, y: scrollY > 0 ? scrollY : 0)
+        textview.setContentOffset(scrollPoint, animated: false)
     }
     
 }

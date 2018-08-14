@@ -37,7 +37,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell: UITableViewCell = tableview.dequeueReusableCell(withIdentifier: "DeviceCell", for: indexPath)
         
-        print("discoveredDevice Name:\(String(describing: appDelegate.discoveredDevice[indexPath.row].name))")
+        print("discoveredDevice Name:\(String(describing: appDelegate.discoveredDevice[indexPath.row].name!))")
         
         cell.textLabel!.text = appDelegate.discoveredDevice[indexPath.row].name
         return cell

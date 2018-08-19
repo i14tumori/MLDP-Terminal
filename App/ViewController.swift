@@ -30,12 +30,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.isEditable = false
  
         // TextViewに枠線をつける
-        textview.layer.borderColor = UIColor.blue.cgColor
+        textview.layer.borderColor = UIColor.gray.cgColor
         textview.layer.borderWidth = 0.5
+        textview.layer.cornerRadius = 5
+        
+        // TextFieldの枠線をTextViewに揃える
+        textfield.layer.borderColor = UIColor.gray.cgColor
+        textfield.layer.borderWidth = 0.5
+        textfield.layer.cornerRadius = 5
         
         // カーソル表示
-        let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray]
-        let attrText = NSMutableAttributedString(string: " ", attributes: stringAttributes)
+        let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray, .foregroundColor : UIColor.gray]
+        let attrText = NSMutableAttributedString(string: "_", attributes: stringAttributes)
         textview.attributedText = attrText
         
         // テキストのフォント設定
@@ -76,6 +82,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return true
     }
     
+    // sendButtonが押されたとき
     @IBAction func sendButtonTapped(_ sender: UIButton) {
         print("send button tapped")
         // キーボードを閉じる
@@ -83,6 +90,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         if appDelegate.outputCharacteristic == nil {
             print("\(appDelegate.peripheralDeviceName) is not ready")
+            showToast(message: "デバイス未接続")
             return
         }
         
@@ -107,6 +115,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textfield.text = ""
     }
     
+    // clearButtonが押されたとき
     @IBAction func clearButtonTapped(_ sender: UIButton) {
         print("clear button tapped")
         textfield.text = ""
@@ -119,15 +128,43 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.font = UIFont(name: "CourierNewPSMT", size: textfield.font!.pointSize)
     }
     
+    // scanButtonが押されたとき
     @IBAction func scanButtonTapped(_ sender: UIButton) {
         print("scan button tapped")
         appDelegate.centralManager.scanForPeripherals(withServices: [appDelegate.mldpService_UUID], options: nil)
     }
     
+    // disconButtonが押されたとき
     @IBAction func disconButtonTapped(_ sender: UIButton) {
         print("disconnect button tapped")
+        
+        if appDelegate.outputCharacteristic == nil {
+            print("\(appDelegate.peripheralDeviceName) is not ready")
+            showToast(message: "デバイス未接続")
+            return
+        }
+        
         appDelegate.peripheral.setNotifyValue(false, for: appDelegate.outputCharacteristic)
         appDelegate.centralManager.cancelPeripheralConnection(appDelegate.peripheral)
+    }
+    
+    // トースト出力関数     https://stackoverflow.com/questions/31540375/how-to-toast-message-in-swiftより
+    func showToast(message : String) {
+        let toastLabel = UILabel(frame: CGRect(x: self.view.frame.size.width/2 - 150, y: self.view.frame.size.height/2, width: 300, height: 35))
+        toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        toastLabel.textColor = UIColor.white
+        toastLabel.textAlignment = .center;
+        toastLabel.font = UIFont(name: "Montserrat-Light", size: 12.0)
+        toastLabel.text = message
+        toastLabel.alpha = 1.0
+        toastLabel.layer.cornerRadius = 10;
+        toastLabel.clipsToBounds  =  true
+        self.view.addSubview(toastLabel)
+        UIView.animate(withDuration: 4.0, delay: 0.1, options: .curveEaseOut, animations: {
+            toastLabel.alpha = 0.0
+        }, completion: {(isCompleted) in
+            toastLabel.removeFromSuperview()
+        })
     }
     
     /* Central関連メソッド */
@@ -137,6 +174,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         switch central.state {
         case .poweredOff:
             print("Bluetoothの電源がOff")
+            showToast(message: "Bluetoothの電源がOFF")
         case .poweredOn:
             print("Bluetoothの電源はOn")
         case .resetting:
@@ -216,11 +254,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             // 書き込みデータの準備(文字を文字コードに変換?)
             let str = "App:on\r\n"
-            
             let data = str.data(using: String.Encoding.utf8)
             
             // ペリフェラルにデータを書き込む
             peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
+            
+            showToast(message: "デバイス接続")
         }
     }
     
@@ -250,14 +289,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // textViewに読み込みデータを書き込む
         // 空白文字の背景をグレーにし、カーソル代わりにする
-        let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray]
-        let attrText = NSMutableAttributedString(string: " ", attributes: stringAttributes)
+        let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray, .foregroundColor : UIColor.gray]
+        let attrText = NSMutableAttributedString(string: "_", attributes: stringAttributes)
         
         // カーソル用空白文字を取り除く
         var getText = textview.text!
-        if getText.count != 0 {
-            getText = String(getText.prefix(getText.count-1))
-        }
+        getText = String(getText.prefix(getText.count-1))
         
         let plainText = NSMutableAttributedString(string: getText + dataString!)
         
@@ -277,6 +314,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         scrollToButtom()
     }
     
+    // textviewを最下までスクロールする関数
     func scrollToButtom() {
         textview.selectedRange = NSRange(location: textview.text.count, length: 0)
         textview.isScrollEnabled = true

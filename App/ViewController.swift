@@ -9,7 +9,7 @@
 import UIKit
 import CoreBluetooth
 
-class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITextFieldDelegate {
+class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITextFieldDelegate, UITextViewDelegate {
        
     var response = ""
     let maxLength = 18
@@ -25,9 +25,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // Do any additional setup after loading the view, typically from a nib.
         
         textfield.delegate = self
-        
-        // TextViewを編集できないようにする
-        textview.isEditable = false
+        textview.delegate = self
  
         // TextViewに枠線をつける
         textview.layer.borderColor = UIColor.gray.cgColor
@@ -80,6 +78,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textField.endEditing(true)
         
         return true
+    }
+    
+    // textViewの入力値を取得し、最後尾に追記
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        print("replacementText : \(text)")
+        var replacementText = text
+        // バックスペースの場合(textには何も入っていない)
+        if text.count == 0 {
+            // バックスペースに置き換え
+            replacementText = "\u{08}"
+        }
+        // 最後尾に追記
+        writeTextView(replacementText)
+        // カーソル位置への追記はしない
+        return false
     }
     
     // sendButtonが押されたとき
@@ -146,9 +159,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         appDelegate.peripheral.setNotifyValue(false, for: appDelegate.outputCharacteristic)
         appDelegate.centralManager.cancelPeripheralConnection(appDelegate.peripheral)
+        
+        // 変数の初期化
+        appDelegate.settingCharacteristic = nil
+        appDelegate.outputCharacteristic = nil
+        appDelegate.discoveredDevice = []
     }
     
-    // トースト出力関数     https://stackoverflow.com/questions/31540375/how-to-toast-message-in-swiftより
+    // トースト出力関数
     func showToast(message : String) {
         let toastLabel = UILabel(frame: CGRect(x: self.view.frame.size.width/2 - 150, y: self.view.frame.size.height/2, width: 300, height: 35))
         toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
@@ -288,15 +306,23 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("dataString:\(String(describing: dataString))")
         
         // textViewに読み込みデータを書き込む
+        writeTextView(dataString!)
+        
+    }
+    
+    // textviewに文字を書き込む関数
+    func writeTextView(_ string: String) {
         // 空白文字の背景をグレーにし、カーソル代わりにする
         let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray, .foregroundColor : UIColor.gray]
         let attrText = NSMutableAttributedString(string: "_", attributes: stringAttributes)
         
         // カーソル用空白文字を取り除く
         var getText = textview.text!
-        getText = String(getText.prefix(getText.count-1))
+        if getText.count != 0 {
+            getText = String(getText.prefix(getText.count-1))
+        }
         
-        let plainText = NSMutableAttributedString(string: getText + dataString!)
+        let plainText = NSMutableAttributedString(string: getText + string)
         
         // 文字列とカーソルの結合用定数
         let text = NSMutableAttributedString()

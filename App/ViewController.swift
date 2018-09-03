@@ -82,16 +82,47 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textViewの入力値を取得し、最後尾に追記
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        print("replacementText : \(text)")
-        var replacementText = text
-        // バックスペースの場合(textには何も入っていない)
-        if text.count == 0 {
-            // バックスペースに置き換え
-            replacementText = "\u{08}"
+        if text == "\n" {
+            if appDelegate.outputCharacteristic == nil {
+                print("\(appDelegate.peripheralDeviceName) is not ready")
+                showToast(message: "デバイス未接続")
+            }
+            else {
+                // 一行分の文字列を取得する
+                let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+                var txText = splitArray[splitArray.count - 1]
+                
+                // カーソル用空白文字を取り除く
+                if txText.count != 0 {
+                    txText = String(txText.prefix(txText.count-1))
+                }
+                
+                /* 商　quotient 余り　remainder */
+                let remainder = txText.count % maxLength
+                
+                // 文字列を分割しながら送信する
+                for i in stride(from: 0, to: txText.count - remainder, by: maxLength) {
+                    let splitText = txText[txText.index(txText.startIndex, offsetBy: i)..<txText.index(txText.startIndex, offsetBy: i + maxLength)]
+                    let data = splitText.data(using: String.Encoding.utf8)
+                    // ペリフェラルにデータを書き込む
+                    appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
+                }
+                
+                let splitText = String(txText.suffix(remainder)) + "\r\n"
+                let data = splitText.data(using: String.Encoding.utf8)
+                
+                // ペリフェラルにデータを書き込む
+                appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
+                
+                // 最後尾に追記
+                writeTextView(text)
+            }
         }
-        // 最後尾に追記
-        writeTextView(replacementText)
-        // カーソル位置への追記はしない
+        else {
+            // 最後尾に追記
+            writeTextView(text)
+        }
+        // デフォルトカーソル(青縦棒)位置への追記はしない
         return false
     }
     
@@ -191,10 +222,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("CentralManagerState: \(central.state)")
         switch central.state {
         case .poweredOff:
-            print("Bluetoothの電源がOff")
+            print("Bluetooth電源 : OFF")
             showToast(message: "Bluetoothの電源がOFF")
         case .poweredOn:
-            print("Bluetoothの電源はOn")
+            print("Bluetooth電源 : ON")
         case .resetting:
             print("レスティング状態")
         case .unauthorized:
@@ -312,6 +343,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textviewに文字を書き込む関数
     func writeTextView(_ string: String) {
+        
         // 空白文字の背景をグレーにし、カーソル代わりにする
         let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray, .foregroundColor : UIColor.gray]
         let attrText = NSMutableAttributedString(string: "_", attributes: stringAttributes)
@@ -322,6 +354,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             getText = String(getText.prefix(getText.count-1))
         }
         
+        // 入力文字を結合する
         let plainText = NSMutableAttributedString(string: getText + string)
         
         // 文字列とカーソルの結合用定数

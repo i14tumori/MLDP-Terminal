@@ -9,12 +9,11 @@
 import UIKit
 import CoreBluetooth
 
-class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITextFieldDelegate, UITextViewDelegate {
+class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITextViewDelegate {
        
     var response = ""
     let maxLength = 18
 
-    @IBOutlet weak var textfield: UITextField!
     @IBOutlet weak var textview: UITextView!
     
     // AppDelegate内の変数呼び出し用
@@ -24,7 +23,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        textfield.delegate = self
         textview.delegate = self
  
         // TextViewに枠線をつける
@@ -32,18 +30,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.layer.borderWidth = 0.5
         textview.layer.cornerRadius = 5
         
-        // TextFieldの枠線をTextViewに揃える
-        textfield.layer.borderColor = UIColor.gray.cgColor
-        textfield.layer.borderWidth = 0.5
-        textfield.layer.cornerRadius = 5
-        
         // カーソル表示
         let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray, .foregroundColor : UIColor.gray]
         let attrText = NSMutableAttributedString(string: "_", attributes: stringAttributes)
         textview.attributedText = attrText
         
         // テキストのフォント設定
-        textfield.font = UIFont(name: "CourierNewPSMT", size: textfield.font!.pointSize)
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
         
         // インスタンスの生成および初期化
@@ -69,15 +61,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("touches began")
         // キーボードを閉じる
         self.view.endEditing(true)
-    }
-   
-    // textField入力でreturn(改行)が押されたとき
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        print("textfield should return")
-        // キーボードを閉じる
-        textField.endEditing(true)
-        
-        return true
     }
     
     // textViewの入力値を取得し、最後尾に追記
@@ -126,50 +109,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return false
     }
     
-    // sendButtonが押されたとき
-    @IBAction func sendButtonTapped(_ sender: UIButton) {
-        print("send button tapped")
-        // キーボードを閉じる
-        textfield.endEditing(true)
-        
-        if appDelegate.outputCharacteristic == nil {
-            print("\(appDelegate.peripheralDeviceName) is not ready")
-            showToast(message: "デバイス未接続")
-            return
-        }
-        
-        // 送信文字数の制限をなくす(本来は(改行コード抜きで)18文字)
-        let txText = textfield.text!
-        /* 商　quotient 余り　remainder */
-        let remainder = txText.count % maxLength
-        
-        for i in stride(from: 0, to: txText.count - remainder, by: maxLength) {
-            let splitText = txText[txText.index(txText.startIndex, offsetBy: i)..<txText.index(txText.startIndex, offsetBy: i + maxLength)]
-            let data = splitText.data(using: String.Encoding.utf8)
-            // ペリフェラルにデータを書き込む
-            appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
-        }
-        
-        let splitText = String(txText.suffix(remainder)) + "\r\n"
-        let data = splitText.data(using: String.Encoding.utf8)
-        // ペリフェラルにデータを書き込む
-        appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
-        
-        // texiFieldのクリア
-        textfield.text = ""
-    }
-    
     // clearButtonが押されたとき
     @IBAction func clearButtonTapped(_ sender: UIButton) {
         print("clear button tapped")
-        textfield.text = ""
         // カーソル表示
         let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray]
         let attrText = NSMutableAttributedString(string: " ", attributes: stringAttributes)
         textview.attributedText = attrText
         
         // フォントを再設定する
-        textview.font = UIFont(name: "CourierNewPSMT", size: textfield.font!.pointSize)
+        textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
     }
     
     // scanButtonが押されたとき

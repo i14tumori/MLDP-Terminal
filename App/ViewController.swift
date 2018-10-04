@@ -9,11 +9,21 @@
 import UIKit
 import CoreBluetooth
 
+// String型の拡張メソッド
+extension String {
+    // 英数字の判定
+    func isAlphanumeric(_ text: String) -> Bool {
+        return text >= "\0" && text <= "~"
+    }
+}
+
 class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITextViewDelegate {
        
     var response = ""
     let maxLength = 18
-
+    
+    var viewEditFlag = 0
+    
     @IBOutlet weak var textview: UITextView!
     
     // AppDelegate内の変数呼び出し用
@@ -24,16 +34,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // Do any additional setup after loading the view, typically from a nib.
         
         textview.delegate = self
- 
+        
         // TextViewに枠線をつける
         textview.layer.borderColor = UIColor.gray.cgColor
         textview.layer.borderWidth = 0.5
         textview.layer.cornerRadius = 5
         
-        // カーソル表示
-        let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray, .foregroundColor : UIColor.gray]
-        let attrText = NSMutableAttributedString(string: "_", attributes: stringAttributes)
-        textview.attributedText = attrText
+        // プロンプト,カーソル表示
+       writePrompt("")
         
         // テキストのフォント設定
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
@@ -65,22 +73,35 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textViewの入力値を取得し、最後尾に追記
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        // 編集不可判断,入力文字制限
+        if (viewEditFlag == 1 || !text.isAlphanumeric(text)) {
+            // 追記せずに戻る
+            return false
+        }
+        // 改行(コマンド送信)のとき
         if text == "\n" {
             if appDelegate.outputCharacteristic == nil {
                 print("\(appDelegate.peripheralDeviceName) is not ready")
                 showToast(message: "デバイス未接続")
             }
             else {
+                
+                // レスポンスがあるまで編集不可にする
+                viewEditFlag = 1
+                
                 // 一行分の文字列を取得する
                 let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
                 var txText = splitArray[splitArray.count - 1]
                 
-                // カーソル用空白文字を取り除く
-                if txText.count != 0 {
+                // カーソル用空白文字,プロンプトを取り除く
+                if txText.count > 1 {
+                    // カーソル用空白文字の除去
                     txText = String(txText.prefix(txText.count-1))
+                    // プロンプトの除去
+                    txText = String(txText.suffix(txText.count-1))
                 }
                 
-                /* 商　quotient 余り　remainder */
+                /* 商　quotient   余り　remainder */
                 let remainder = txText.count % maxLength
                 
                 // 文字列を分割しながら送信する
@@ -99,6 +120,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
                 // 最後尾に追記
                 writeTextView(text)
+                
             }
         }
         else {
@@ -113,9 +135,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBAction func clearButtonTapped(_ sender: UIButton) {
         print("clear button tapped")
         // カーソル表示
-        let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray]
-        let attrText = NSMutableAttributedString(string: " ", attributes: stringAttributes)
-        textview.attributedText = attrText
+        writePrompt("")
         
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
@@ -288,11 +308,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // textViewに読み込みデータを書き込む
         writeTextView(dataString!)
         
+        // 改行コードのとき
+        if (dataString! == "\r") {
+            writePrompt(textview.text)
+            viewEditFlag = 0
+        }
     }
     
     // textviewに文字を書き込む関数
     func writeTextView(_ string: String) {
-        
         // 空白文字の背景をグレーにし、カーソル代わりにする
         let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray, .foregroundColor : UIColor.gray]
         let attrText = NSMutableAttributedString(string: "_", attributes: stringAttributes)
@@ -320,6 +344,30 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // 画面のスクロール
         scrollToButtom()
+    }
+    
+    // textviewにプロンプトを書き込む関数
+    func writePrompt(_ string: String) {
+        // カーソル用空白文字を取り除く
+        var getText = string
+        if getText.count != 0 {
+            getText = String(getText.prefix(getText.count-1))
+        }
+        
+        let stringAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray, .foregroundColor : UIColor.gray]
+        let attrText = NSMutableAttributedString(string: "_", attributes: stringAttributes)
+        let plainText = NSMutableAttributedString(string: getText)
+        let prompt = NSMutableAttributedString(string: ">")
+        
+        let text = NSMutableAttributedString()
+        text.append(plainText)
+        text.append(prompt)
+        text.append(attrText)
+        
+        // textviewに設定する
+        textview.attributedText = text
+        // フォントを再設定する
+        textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
     }
     
     // textviewを最下までスクロールする関数

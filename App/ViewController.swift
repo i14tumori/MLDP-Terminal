@@ -37,8 +37,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        textview.delegate = self
-        
         // TextViewに枠線をつける
         textview.layer.borderColor = UIColor.gray.cgColor
         textview.layer.borderWidth = 0.5
@@ -51,6 +49,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.center = CGPoint(x: UIScreen.main.bounds.size.width / 2, y: UIScreen.main.bounds.size.height / 3)
          */
         
+        let keyboard = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 40))
+        keyboard.backgroundColor = UIColor.darkGray
+        keyboard.sizeToFit()
+        
+        let leftButton = UIButton(frame: CGRect(x: 5, y: 5, width: 80, height: 30))
+        leftButton.backgroundColor = UIColor.lightGray
+        leftButton.setTitle("←", for: UIControlState.normal)
+        leftButton.addTarget(self, action: Selector(("leftTapped")), for: UIControlEvents.touchUpInside)
+        
+        keyboard.addSubview(leftButton)
+        
+        textview.inputAccessoryView = keyboard
+        
+        textview.delegate = self
+        
         // プロンプト,カーソル表示
        writePrompt("")
         
@@ -62,6 +75,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // インスタンスの生成および初期化
         appDelegate.centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
+    }
+    
+    func leftTapped() {
+        print("left")
     }
     
     override func viewWillAppear(_ animated: Bool) {

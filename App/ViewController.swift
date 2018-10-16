@@ -80,11 +80,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textViewの入力値を取得し、最後尾に追記
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        // 編集不可判断,入力文字制限
-        if (viewEditFlag == 1 || !text.isAlphanumeric(text)) {
+        // 編集不可判断,入力文字制限(DELは空文字になるため制限する)
+        if (viewEditFlag == 1 || (!text.isAlphanumeric(text) && text != "")) {
             // 追記せずに戻る
             return false
         }
+        
         // 改行(コマンド送信)のとき
         if text == "\n" {
             if appDelegate.outputCharacteristic == nil {
@@ -132,6 +133,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 cursor[1] = 1
                 
                 // カーソルを表示する
+                viewCursor()
+            }
+        }
+        // 空文字(DELキー)のとき
+        else if text == "" {
+            if cursor[1] > 1 {
+                deleteTextView()
+                cursor[1] = cursor[1] - 1
                 viewCursor()
             }
         }
@@ -183,7 +192,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // トースト出力関数
-    func showToast(message : String) {
+    // message : トーストする文字列
+    func showToast(message: String) {
         let toastLabel = UILabel(frame: CGRect(x: self.view.frame.size.width/2 - 150, y: self.view.frame.size.height/2, width: 300, height: 35))
         toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
         toastLabel.textColor = UIColor.white
@@ -241,6 +251,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     /* Central関連メソッド */
     
+    // centralManagerの状態が変化すると呼ばれる
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         print("CentralManagerState: \(central.state)")
         switch central.state {
@@ -381,6 +392,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // textview内のカーソル位置に文字を書き込む関数
+    // string : 書き込む文字
     func writeTextView(_ string: String) {
         // textview内の文字列を改行で分割する
         let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
@@ -400,6 +412,49 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // カーソル行の完成
         let curText = preStr + string + aftStr
+        
+        print("preString : \(preStr) , aftString : \(aftStr) , cursorString : \(curText)")
+        
+        // カーソル以外の行と結合
+        var allText = ""
+        for i in 0..<splitArray.count {
+            if i == cursor[0] - 1 {
+                allText.append(curText)
+            }
+            else {
+                allText.append(splitArray[i] + "\n")
+            }
+        }
+        
+        print("allText : \(allText)")
+        
+        // textviewに設定する
+        textview.text = allText
+        
+        // フォントを再設定する
+        textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
+    }
+    
+    // カーソル位置の文字を削除する関数
+    func deleteTextView() {
+        // textview内の文字列を改行で分割する
+        let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+        
+        // カーソルの指す行を取得する
+        let crText = splitArray[cursor[0] - 1]
+        
+        print("--- deleteTextView ---")
+        print("splitArray.count : \(splitArray.count)")
+        print("get index : \(cursor[0] - 1)")
+        print("crText : \(crText)\ncount : \(crText.count)")
+        
+        // カーソル前の文字列 - カーソル文字
+        let preStr = String(crText.prefix(cursor[1] - 2))
+        // カーソル後の文字列
+        let aftStr = String(crText.suffix((crText.count - cursor[1]) + 1))
+        
+        // 削除後の文の完成
+        let curText = preStr + aftStr
         
         print("preString : \(preStr) , aftString : \(aftStr) , cursorString : \(curText)")
         
@@ -481,6 +536,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // プロンプトを書き込む関数(カーソルはプロンプトの次に移動させる)
+    // string : プロンプトを書き込む文字列
     func writePrompt(_ string: String) {
         var getText = string
         

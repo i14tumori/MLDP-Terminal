@@ -41,27 +41,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.layer.borderColor = UIColor.gray.cgColor
         textview.layer.borderWidth = 0.5
         textview.layer.cornerRadius = 5
-        
-        // TextViewの位置,サイズ調整
-        /*
-        textview.frame.size.width = UIScreen.main.bounds.size.width * 12 / textview.font!.pointSize
-        textview.frame.size.height = UIScreen.main.bounds.size.height * 7 / textview.font!.pointSize
-        textview.center = CGPoint(x: UIScreen.main.bounds.size.width / 2, y: UIScreen.main.bounds.size.height / 3)
-         */
-        
-        let keyboard = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 40))
-        keyboard.backgroundColor = UIColor.darkGray
-        keyboard.sizeToFit()
-        
-        let leftButton = UIButton(frame: CGRect(x: 5, y: 5, width: 80, height: 30))
-        leftButton.backgroundColor = UIColor.lightGray
-        leftButton.setTitle("←", for: UIControlState.normal)
-        leftButton.addTarget(self, action: Selector(("leftTapped")), for: UIControlEvents.touchUpInside)
-        
-        keyboard.addSubview(leftButton)
-        
-        textview.inputAccessoryView = keyboard
-        
+ 
         textview.delegate = self
         
         // プロンプト,カーソル表示
@@ -75,10 +55,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // インスタンスの生成および初期化
         appDelegate.centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
-    }
-    
-    func leftTapped() {
-        print("left")
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -223,6 +199,44 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }, completion: {(isCompleted) in
             toastLabel.removeFromSuperview()
         })
+    }
+    
+    /* キーボード追加ボタンイベント */
+    
+    @objc func escTapped() {
+        print("esc")
+    }
+    
+    @objc func upTapped() {
+        print("up")
+        if cursor[0] > 1 {
+            cursor[0] = cursor[0] - 1
+            viewCursor()
+        }
+    }
+    
+    @objc func downTapped() {
+        print("down")
+        if cursor[0] < getTextCount().count {
+            cursor[0] = cursor[0] + 1
+            viewCursor()
+        }
+    }
+    
+    @objc func leftTapped() {
+        print("left")
+        if cursor[1] > 1 {
+            cursor[1] = cursor[1] - 1
+            viewCursor()
+        }
+    }
+    
+    @objc func rightTapped() {
+        print("right")
+        if cursor[1] < getTextCount()[cursor[0] - 1] {
+            cursor[1] = cursor[1] + 1
+            viewCursor()
+        }
     }
     
     /* Central関連メソッド */
@@ -524,6 +538,27 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
         }
         return false
+    }
+    
+    // textviewの行数と各行の文字数を返す関数
+    func getTextCount() -> [Int] {
+        // 文字数カウント変数
+        var count = [Int]()
+        
+        // textview内の文字列を改行で分割する
+        let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+        
+        // 各行の文字数を格納する
+        for i in 0..<splitArray.count {
+            count.append(splitArray[i].count)
+        }
+        
+        print("--- getTextCount ---")
+        for i in 0..<count.count {
+            print("row : \(i + 1) , column : \(count[i])")
+        }
+        
+        return count
     }
     
     // textviewを最下までスクロールする関数

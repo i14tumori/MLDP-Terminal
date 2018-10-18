@@ -30,6 +30,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // コマンド記憶変数
     var commandList = [String]()
+    // コマンド一時記憶変数
+    var tempCommand = ""
+    // commandListの添字変数
+    var commandIndex = 0
     
     @IBOutlet weak var textview: UITextView!
     
@@ -135,8 +139,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // カーソル位置に追記
                 writeTextView(text)
                 
+                // コマンド記憶サイズを超えている場合は古い方から削除する
+                if commandList.count >= maxLength {
+                    commandList.removeFirst()
+                }
                 // 次のコマンドを記憶する準備
                 commandList.append("")
+                
+                // commandListの添字を初期化する
+                commandIndex = 0
                 
                 // カーソルをずらす
                 cursor[0] = cursor[0] + 1
@@ -148,16 +159,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // 空文字(DELキー)のとき
         else if text == "" {
-            if cursor[1] > 1 {
+            if cursor[1] > 2 {
                 // カーソル位置の文字を削除する
                 deleteTextView()
                 
                 // 現在のコマンドを示す添字
                 let index = commandList.count - 1
                 // コマンド
-                let command = commandList[commandList.count - 1]
-                // コマンドをから一文字削除する
-                commandList[index] = String(commandList[index].prefix(command.count - 1))
+                let command = commandList[index]
+                // コマンドがあるなら一文字削除する
+                if command.count > 0 {
+                    // コマンドをから一文字削除する
+                    commandList[index] = String(commandList[index].prefix(command.count - 1))
+                }
                 
                 // カーソルをずらす
                 cursor[1] = cursor[1] - 1
@@ -194,9 +208,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
-        
-        print("commandList : \(commandList)")
-        
     }
     
     // scanButtonが押されたとき
@@ -242,31 +253,72 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     /* キーボード追加ボタンイベント */
     
     @objc func escTapped() {
-        print("esc")
+        print("--- esc ---")
     }
     
     @objc func upTapped() {
         print("--- up ---")
-        // カーソルを移動させられるとき
-        if cursor[0] > 1 {
-            cursor[0] = cursor[0] - 1
-            // 移動後の列の方が短いとき
-            if cursor[1] > getTextCount()[cursor[0] - 1] {
-                cursor[1] = getTextCount()[cursor[0] - 1]
+        if commandList.count - 2 >= commandIndex {
+            // 元のコマンドを記憶する
+            if commandIndex == 0 {
+                tempCommand = commandList[commandList.count - 1]
             }
+            // 表示するコマンドを変化させる
+            commandIndex = commandIndex + 1
+            // textview内の文字列を改行で分割する
+            let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+            
+            // 最後の2行以外を改行ありで結合する
+            var allText = ""
+            for i in 0..<splitArray.count - 2 {
+                allText.append(splitArray[i] + "\n")
+            }
+            // 最後から2番目の行を改行なしで結合する
+            allText.append(splitArray[splitArray.count - 2])
+            
+            // コマンドを書き換える
+            writePrompt(allText)
+            writeTextView(commandList[(commandList.count - 1) - commandIndex])
+            // コマンド記憶も書き換える
+            commandList[commandList.count - 1] = commandList[(commandList.count - 1) - commandIndex]
+            
+            // カーソルをずらす
+            cursor[1] = cursor[1] + commandList[commandList.count - 1].count
+            // カーソルを表示する
             viewCursor()
         }
     }
     
     @objc func downTapped() {
         print("--- down ---")
-        // カーソルを移動させられるとき
-        if cursor[0] < getTextCount().count {
-            cursor[0] = cursor[0] + 1
-            // 移動後の列の方が短いとき
-            if cursor[1] > getTextCount().count {
-                cursor[1] = getTextCount()[cursor[0] - 1]
+        print("commandList.count - 1 : \(commandList.count - 1)\ncommandIndex : \(commandIndex)")
+        if commandIndex > 0 {
+            // 表示するコマンドを変化させる
+            commandIndex = commandIndex - 1
+            // 元に戻ってきたら記憶した元コマンドを復旧する
+            if commandIndex == 0 {
+                commandList[commandList.count - 1] = tempCommand
             }
+            // textview内の文字列を改行で分割する
+            let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+            
+            // 最後の2行以外を改行ありで結合する
+            var allText = ""
+            for i in 0..<splitArray.count - 2 {
+                allText.append(splitArray[i] + "\n")
+            }
+            // 最後から2番目の行を改行なしで結合する
+            allText.append(splitArray[splitArray.count - 2])
+            
+            // コマンドを書き換える
+            writePrompt(allText)
+            writeTextView(commandList[(commandList.count - 1) - commandIndex])
+            // コマンド記憶も書き換える
+            commandList[commandList.count - 1] = commandList[(commandList.count - 1) - commandIndex]
+            
+            // カーソルをずらす
+            cursor[1] = cursor[1] + commandList[commandList.count - 1].count
+            // カーソルを表示する
             viewCursor()
         }
     }
@@ -274,7 +326,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @objc func leftTapped() {
         print("--- left ---")
         // カーソルを移動させられるとき
-        if cursor[1] > 1 {
+        if cursor[1] > 2 {
             cursor[1] = cursor[1] - 1
             viewCursor()
         }
@@ -411,7 +463,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("dataString:\(String(describing: dataString))")
         
         // 改行コードのとき
-        if (dataString! == "\r") {
+        if (dataString! == "\u{03}") {
             writePrompt(textview.text)
             // カーソルを表示する
             viewCursor()
@@ -424,7 +476,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             writeTextView(dataString!)
             
             // カーソルをずらす
-            cursor[1] = cursor[1] + 1
+            if dataString! == "\r" {
+                cursor[0] = cursor[0] + 1
+                cursor[1] = 1
+            }
+            else {
+                cursor[1] = cursor[1] + 1
+            }
             
             // カーソルを表示する
             viewCursor()
@@ -475,7 +533,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
     }
     
-    // カーソル位置の文字を削除する関数
+    // カーソル位置の一つ前の文字を削除する関数
     func deleteTextView() {
         // textview内の文字列を改行で分割する
         let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
@@ -591,7 +649,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         var getText = string
         
         // カーソルが最後尾にある場合
-        if curIsEnd() && getText.count != 0 {
+        if curIsEnd() && getText.suffix(1) == "_" && getText.count != 0 {
             // カーソル用文字を取り除く
             getText = String(getText.prefix(getText.count - 1))
         }

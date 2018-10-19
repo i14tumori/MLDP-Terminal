@@ -39,6 +39,12 @@ class CustomTextView: UITextView {
         escButton.setTitle("ESC", for: UIControlState.normal)
         escButton.addTarget(ViewController(), action: #selector(ViewController.escTapped), for: UIControlEvents.touchUpInside)
         
+        // コントロールキーの作成、設定
+        let ctrlButton = UIButton(frame: CGRect())
+        ctrlButton.backgroundColor = UIColor.lightGray
+        ctrlButton.setTitle("Ctrl", for: UIControlState.normal)
+        ctrlButton.addTarget(ViewController(), action: #selector(ViewController.ctrlTapped), for: UIControlEvents.touchUpInside)
+        
         // 上矢印キーの作成、設定
         let upButton = UIButton(frame: CGRect())
         upButton.backgroundColor = UIColor.lightGray
@@ -65,6 +71,7 @@ class CustomTextView: UITextView {
         
         // ボタンをViewに追加する
         keyboard.addArrangedSubview(escButton)
+        keyboard.addArrangedSubview(ctrlButton)
         keyboard.addArrangedSubview(upButton)
         keyboard.addArrangedSubview(downButton)
         keyboard.addArrangedSubview(leftButton)

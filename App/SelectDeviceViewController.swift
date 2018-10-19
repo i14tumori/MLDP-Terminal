@@ -19,7 +19,13 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.]
+        
+        // centralManagerのデリゲートをセット
         appDelegate.centralManager.delegate = self
+        
+        // TableViewのデリゲートとデータソースをセット
+        tableview.delegate = self
+        tableview.dataSource = self
     }
 
     override func didReceiveMemoryWarning() {
@@ -68,6 +74,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     @IBAction func reloadButtonTapped(_ sender: UIButton) {
         // デバイス配列をクリア
         appDelegate.discoveredDevice = []
+        reload()
     }
     
     @IBAction func cancelButtonTapped(_ sender: UIButton) {

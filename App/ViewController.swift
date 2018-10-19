@@ -22,7 +22,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var response = ""
     let maxLength = 18
     
-    // テキスト入力可能判断用フラグ
+    // テキスト入力可能判断用フラグ(0: iPhone 入力可 , 1: iPhone 入力不可)
     var viewEditFlag = 0
     
     // カーソル位置記憶変数
@@ -104,7 +104,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 showToast(message: "デバイス未接続")
             }
             else {
-                // レスポンスがあるまで編集不可にする
+                // レスポンスがあるまで書き込み不可にする
                 viewEditFlag = 1
                 
                 // 一行分の文字列を取得する
@@ -254,10 +254,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     @objc func escTapped() {
         print("--- esc ---")
+        let data = "\u{1b}".data(using: .utf8)
+        // ペリフェラルにデータを書き込む
+        appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
+    }
+    
+    @objc func ctrlTapped() {
+        print("--- ctrl ---")
     }
     
     @objc func upTapped() {
         print("--- up ---")
+        // 入力不可のときは何もしない
+        if viewEditFlag == 1 {
+            return
+        }
         if commandList.count - 2 >= commandIndex {
             // 元のコマンドを記憶する
             if commandIndex == 0 {
@@ -291,6 +302,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     @objc func downTapped() {
         print("--- down ---")
+        // 入力不可のときは何もしない
+        if viewEditFlag == 1 {
+            return
+        }
         print("commandList.count - 1 : \(commandList.count - 1)\ncommandIndex : \(commandIndex)")
         if commandIndex > 0 {
             // 表示するコマンドを変化させる
@@ -325,6 +340,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     @objc func leftTapped() {
         print("--- left ---")
+        // 入力不可のときは何もしない
+        if viewEditFlag == 1 {
+            return
+        }
         // カーソルを移動させられるとき
         if cursor[1] > 2 {
             cursor[1] = cursor[1] - 1
@@ -334,6 +353,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     @objc func rightTapped() {
         print("--- right ---")
+        // 入力不可のときは何もしない
+        if viewEditFlag == 1 {
+            return
+        }
         // カーソルを移動させられるとき
         if cursor[1] < getTextCount()[cursor[0] - 1] {
             cursor[1] = cursor[1] + 1
@@ -454,6 +477,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         
+        // 書き込み不可なら何もしない
+        if viewEditFlag == 0 {
+            return
+        }
+        
         textview.isScrollEnabled = false
         
         //  読み込みデータの取り出し(文字コードを文字に変換?)
@@ -462,12 +490,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         print("dataString:\(String(describing: dataString))")
         
-        // 改行コードのとき
-        if (dataString! == "\u{03}") {
+        // Ctrl+d(EOT : 転送終了)のとき
+        if (dataString! == "\u{04}") {
+            print("End of Transmission")
+            // プロンプトを書き込む
             writePrompt(textview.text)
             // カーソルを表示する
             viewCursor()
             
+            // iPhoneからの書き込みを許可する
             viewEditFlag = 0
         }
         // それ以外のとき

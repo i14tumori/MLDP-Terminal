@@ -107,6 +107,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // レスポンスがあるまで書き込み不可にする
                 viewEditFlag = 1
                 
+                textview.isScrollEnabled = false
+                
                 // 一行分の文字列を取得する
                 let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
                 var txText = splitArray[splitArray.count - 1]
@@ -193,6 +195,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // カーソルを表示する
             viewCursor()
         }
+        
+        // 画面をスクロールする
+        scrollToButtom()
+        
         // デフォルトカーソル(青縦棒)位置への追記はしない
         return false
     }
@@ -346,6 +352,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // カーソルを移動させられるとき
         if cursor[1] > 2 {
+            // textview内の文字列を改行で分割する
+            var splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+            // カーソルの指す行を取得する
+            let crText = splitArray[cursor[0] - 1]
+            // カーソル文字を削除する
+            if cursor[1] == crText.count && crText.suffix(1) == "_"{
+                splitArray[cursor[0] - 1] = String(crText.prefix(crText.count - 1))
+                // 結合した文字列をtextviewに設定する
+                textview.text = splitArray.joined(separator: "\n")
+            }
+            // カーソルをずらす
             cursor[1] = cursor[1] - 1
             viewCursor()
         }
@@ -358,7 +375,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         // カーソルを移動させられるとき
-        if cursor[1] < getTextCount()[cursor[0] - 1] {
+        if cursor[1] < getTextCount()[cursor[0] - 1] + 1 {
+            // textview内の文字列を改行で分割する
+            var splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+            // カーソルの指す行を取得する
+            let crText = splitArray[cursor[0] - 1]
+            // カーソル文字を追加する
+            if cursor[1] == crText.count && crText.suffix(1) != "_"{
+                splitArray[cursor[0] - 1] = crText + "_"
+                // 結合した文字列をtextviewに設定する
+                textview.text = splitArray.joined(separator: "\n")
+            }
+            // カーソルをずらす
             cursor[1] = cursor[1] + 1
             viewCursor()
         }
@@ -518,11 +546,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // カーソルを表示する
             viewCursor()
         }
+        // 画面をスクロールする
+        scrollToButtom()
     }
     
     // textview内のカーソル位置に文字を書き込む関数
     // string : 書き込む文字
     func writeTextView(_ string: String) {
+        textview.isScrollEnabled = false
         // textview内の文字列を改行で分割する
         let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
         
@@ -562,6 +593,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
+        
+        // 画面をスクロールする
+        scrollToButtom()
     }
     
     // カーソル位置の一つ前の文字を削除する関数

@@ -40,6 +40,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
     
+    var timer: Timer?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -395,6 +397,22 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    // ??? 呼ばれない
+    @objc func leftPress(gesture: UILongPressGestureRecognizer) {
+        print("--- leftPress ---")
+        if gesture.state == .began {
+            timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { (_) in
+                guard let _ = self.timer else {
+                    return
+                }
+                // 呼び出し
+            }
+        }
+        if gesture.state == .ended {
+            timer?.invalidate()
+        }
+    }
+    
     @objc func rightTapped() {
         print("--- right ---")
         // 入力不可のときは何もしない
@@ -423,7 +441,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // centralManagerの状態が変化すると呼ばれる
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        print("CentralManagerState: \(central.state)")
         switch central.state {
         case .poweredOff:
             print("Bluetooth電源 : OFF")

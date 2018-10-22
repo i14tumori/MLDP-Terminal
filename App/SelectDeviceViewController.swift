@@ -16,16 +16,23 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
     
+    // デバイス名保存
+    let defaults = UserDefaults.standard
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.]
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(true)
         
         // centralManagerのデリゲートをセット
         appDelegate.centralManager.delegate = self
         
-        // TableViewのデリゲートとデータソースをセット
-        tableview.delegate = self
-        tableview.dataSource = self
+        if UserDefaults.standard.object(forKey: "DeviceName") != nil {
+            print("Registered Device Name Is \(String(describing: UserDefaults.standard.string(forKey: "DeviceName")))")
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -55,7 +62,12 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     
     // デバイスが選択されたとき
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        // ペリフェラルを登録する
         appDelegate.peripheral = appDelegate.discoveredDevice[indexPath.row]
+        
+        // 接続するペリフェラルを記憶する
+        defaults.set(appDelegate.peripheral.name!, forKey: "DeviceName")
+        defaults.synchronize()
         
         // 省電力のために探索停止
         appDelegate.centralManager?.stopScan()
@@ -63,6 +75,9 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         // 接続開始
         print("\(String(describing: appDelegate.peripheral.name!))へ接続開始")
         appDelegate.centralManager.connect(appDelegate.peripheral, options: nil)
+        
+        // デリゲートを消す
+        appDelegate.centralManager.delegate = nil
         
         // デバイス配列をクリアし元の画面に戻る
         appDelegate.discoveredDevice = []

@@ -21,6 +21,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
        
     var response = ""
     let maxLength = 18
+    var timer: Timer?
     
     // テキスト入力可能判断用フラグ(0: iPhone 入力可 , 1: iPhone 入力不可)
     var viewEditFlag = 0
@@ -282,6 +283,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     /* キーボード追加ボタンイベント */
     
+    // Escボタンを押したとき
     @objc func escTapped() {
         print("--- esc ---")
         if appDelegate.outputCharacteristic == nil {
@@ -292,10 +294,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
     }
     
+    // Ctrlボタンを押したとき
     @objc func ctrlTapped() {
         print("--- ctrl ---")
     }
     
+    // 上ボタンを押したとき
     @objc func upTapped() {
         print("--- up ---")
         // 入力不可のときは何もしない
@@ -333,6 +337,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    // 下ボタンを押したとき
     @objc func downTapped() {
         print("--- down ---")
         // 入力不可のときは何もしない
@@ -371,6 +376,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    // 左ボタンを押したとき
     @objc func leftTapped() {
         print("--- left ---")
         // 入力不可のときは何もしない
@@ -395,6 +401,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    // 右ボタンを押したとき
     @objc func rightTapped() {
         print("--- right ---")
         // 入力不可のときは何もしない
@@ -539,14 +546,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         textview.isScrollEnabled = false
         
-        //  読み込みデータの取り出し(文字コードを文字に変換?)
+        //  読み込みデータの取り出し
         let data = characteristic.value
         let dataString = String(data: data!, encoding: String.Encoding.utf8)
         
         print("dataString:\(String(describing: dataString))")
         
         // Ctrl+d(EOT : 転送終了)のとき
-        if (dataString! == "\u{04}") {
+        if dataString! == "\u{04}" {
             print("End of Transmission")
             // プロンプトを書き込む
             writePrompt(textview.text)
@@ -555,6 +562,60 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             // iPhoneからの書き込みを許可する
             viewEditFlag = 0
+        }
+        // Ctrl+a(カーソルを行先頭に移動)のとき
+        else if dataString! == "\u{01}" {
+            print("cursor move to top")
+            // カーソルを移動させられるとき
+            if cursor[1] > 2 {
+                // textview内の文字列を改行で分割する
+                var splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+                // カーソルの指す行を取得する
+                let crText = splitArray[cursor[0] - 1]
+                // カーソル文字を削除する
+                if cursor[1] == crText.count && crText.suffix(1) == "_"{
+                    splitArray[cursor[0] - 1] = String(crText.prefix(crText.count - 1))
+                    // 結合した文字列をtextviewに設定する
+                    textview.text = splitArray.joined(separator: "\n")
+                }
+                // カーソルをずらす
+                cursor[1] = 1
+                viewCursor()
+            }
+        }
+        // Ctrl+e(カーソルを行末尾に移動)のとき
+        else if dataString! == "\u{05}" {
+            print("cursor move to end")
+            // textview内の文字列を改行で分割する
+            var splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+            // カーソルの指す行を取得する
+            let crText = splitArray[cursor[0] - 1]
+            // カーソルを移動させられるとき
+            if cursor[1] < getTextCount()[cursor[0] - 1] || crText.suffix(1) != "_" {
+                // カーソル文字を追加する
+                splitArray[cursor[0] - 1] = crText + "_"
+                // 結合した文字列をtextviewに設定する
+                textview.text = splitArray.joined(separator: "\n")
+                // カーソルをずらす
+                cursor[1] = getTextCount()[cursor[0] - 1]
+                viewCursor()
+            }
+        }
+        // Ctrl+b(カーソルを一文字左に移動)のとき
+        else if dataString! == "\u{02}" {
+            // 一時的に書き込みを許可する
+            viewEditFlag = 0
+            leftTapped()
+            // 元に戻す
+            viewEditFlag = 1
+        }
+        // Ctrl+f(カーソルを一文字右に移動)のとき
+        else if dataString! == "\u{06}" {
+            // 一時的に書き込みを許可する
+            viewEditFlag = 0
+            rightTapped()
+            // 元に戻す
+            viewEditFlag = 1
         }
         // それ以外のとき
         else {

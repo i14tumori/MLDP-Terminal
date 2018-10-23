@@ -114,6 +114,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     
     // ペリフェラルを発見したときに呼ばれる
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        /// ??? 繋がらない
         print("記憶したデバイス名 : \(String(describing: userDefaults.string(forKey: "DeviceName")))")
         if userDefaults.string(forKey: "DeviceName") == peripheral.name! {
             // ペリフェラルを登録する
@@ -131,6 +132,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
             // デバイス配列をクリアし元の画面に戻る
             appDelegate.discoveredDevice = []
             self.dismiss(animated: true, completion: nil)
+            return
         }
         
         // デバイス配列に追加格納

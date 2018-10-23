@@ -284,26 +284,31 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     /* キーボード追加ボタンイベント */
     
+    // 追加ボタンESCが押されたとき
     @objc func escTapped() {
         print("--- esc ---")
+        // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
             return
         }
         let data = "\u{1b}".data(using: .utf8)
-        // ペリフェラルにデータを書き込む
+        // ペリフェラルにエスケープを書き込む
         appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
     }
     
+    // 追加ボタンCtrlが押されたとき
     @objc func ctrlTapped() {
         print("--- ctrl ---")
     }
     
+    // 追加ボタン↑が押されたとき
     @objc func upTapped() {
         print("--- up ---")
         // 入力不可のときは何もしない
         if viewEditFlag == 1 {
             return
         }
+        // 記憶したコマンドがあるとき
         if commandList.count - 2 >= commandIndex {
             // 元のコマンドを記憶する
             if commandIndex == 0 {
@@ -335,6 +340,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    // 追加ボタン↓が押されたとき
     @objc func downTapped() {
         print("--- down ---")
         // 入力不可のときは何もしない
@@ -342,6 +348,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         print("commandList.count - 1 : \(commandList.count - 1)\ncommandIndex : \(commandIndex)")
+        // 記憶したコマンドがあるとき
         if commandIndex > 0 {
             // 表示するコマンドを変化させる
             commandIndex = commandIndex - 1
@@ -373,14 +380,30 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    // 追加ボタン←が押されたとき
     @objc func leftTapped() {
         print("--- left ---")
         // 入力不可のときは何もしない
         if viewEditFlag == 1 {
             return
         }
+        // カーソルを一つ左にずらす
+        moveLeft()
+    }
+    
+    // カーソルを左にずらす関数(カーソル表示含む)
+    // attr : ずらす量を調整する引数 (top : 行先頭にずらす)
+    // parent : 呼び出し元の関数名
+    func moveLeft(attr: String = "", parent: String = #function) {
+        print("--- moveLeft ---")
+        // カーソル移動を制限するための変数
+        var limit = 1
+        // 呼び出し元がleftTapped()の場合プロンプトの分だけ移動を制限する
+        if parent == "leftTapped()" {
+            limit = 2
+        }
         // カーソルを移動させられるとき
-        if cursor[1] > 2 {
+        if cursor[1] > limit {
             // textview内の文字列を改行で分割する
             var splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
             // カーソルの指す行を取得する
@@ -392,7 +415,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 textview.text = splitArray.joined(separator: "\n")
             }
             // カーソルをずらす
-            cursor[1] = cursor[1] - 1
+            if attr == "top" {
+                cursor[1] = 1
+            }
+            else if attr == "" {
+                cursor[1] = cursor[1] - 1
+            }
             viewCursor()
         }
     }
@@ -413,12 +441,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    // 追加ボタン→が押されたとき
     @objc func rightTapped() {
         print("--- right ---")
         // 入力不可のときは何もしない
         if viewEditFlag == 1 {
             return
         }
+        // カーソルを一つ右にずらす
+        moveRight()
+    }
+    
+    // カーソルを右にずらす関数(カーソル表示含む)
+    // attr : ずらす量を調整する引数 (end : 行末尾にずらす)
+    func moveRight(attr: String = "") {
         // textview内の文字列を改行で分割する
         var splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
         // カーソルの指す行を取得する
@@ -426,13 +462,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソルを移動させられるとき
         if cursor[1] < getTextCount()[cursor[0] - 1] || crText.suffix(1) != "_" {
             // カーソル文字を追加する
-            if cursor[1] == crText.count && crText.suffix(1) != "_"{
+            if (cursor[1] == crText.count && crText.suffix(1) != "_") || attr == "end" {
                 splitArray[cursor[0] - 1] = crText + "_"
                 // 結合した文字列をtextviewに設定する
                 textview.text = splitArray.joined(separator: "\n")
             }
             // カーソルをずらす
-            cursor[1] = cursor[1] + 1
+            if attr == "end" {
+                cursor[1] = splitArray[cursor[0] - 1].count
+            }
+            else if attr == "" {
+                cursor[1] = cursor[1] + 1
+            }
             viewCursor()
         }
     }
@@ -563,7 +604,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("dataString:\(String(describing: dataString))")
         
         // Ctrl+d(EOT : 転送終了)のとき
-        if (dataString! == "\u{04}") {
+        if dataString! == "\u{04}" {
             print("End of Transmission")
             // プロンプトを書き込む
             writePrompt(textview.text)
@@ -572,6 +613,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             // iPhoneからの書き込みを許可する
             viewEditFlag = 0
+        }
+        // Ctrl+a(カーソルを行先頭に移動)のとき
+        else if dataString! == "\u{01}" {
+            print("move to Top")
+            moveLeft(attr: "top")
+        }
+        // Ctrl+b(カーソルを一文字左に移動)のとき
+        else if dataString! == "\u{02}" {
+            moveLeft()
+        }
+        // Ctrl+e(カーソルを行末尾に移動)のとき
+        else if dataString! == "\u{05}" {
+            print("move to End")
+            moveRight(attr: "end")
+        }
+        // Ctrl+f(カーソルを一文字右に移動)のとき
+        else if dataString! == "\u{06}" {
+            moveRight()
         }
         // それ以外のとき
         else {

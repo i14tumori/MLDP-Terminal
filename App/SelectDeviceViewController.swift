@@ -10,14 +10,12 @@ import UIKit
 import CoreBluetooth
 
 class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITableViewDelegate, UITableViewDataSource {
-
     @IBOutlet weak var tableview: UITableView!
     
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
     
-    // デバイス名保存
-    let defaults = UserDefaults.standard
+    let userDefaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,10 +27,6 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         
         // centralManagerのデリゲートをセット
         appDelegate.centralManager.delegate = self
-        
-        if UserDefaults.standard.object(forKey: "DeviceName") != nil {
-            print("Registered Device Name Is \(String(describing: UserDefaults.standard.string(forKey: "DeviceName")))")
-        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -65,9 +59,9 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         // ペリフェラルを登録する
         appDelegate.peripheral = appDelegate.discoveredDevice[indexPath.row]
         
-        // 接続するペリフェラルを記憶する
-        defaults.set(appDelegate.peripheral.name!, forKey: "DeviceName")
-        defaults.synchronize()
+        // ペリフェラルを記憶する
+        userDefaults.set(appDelegate.peripheral.name!, forKey: "DeviceName")
+        userDefaults.synchronize()
         
         // 省電力のために探索停止
         appDelegate.centralManager?.stopScan()
@@ -120,6 +114,25 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     
     // ペリフェラルを発見したときに呼ばれる
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        print("記憶したデバイス名 : \(String(describing: userDefaults.string(forKey: "DeviceName")))")
+        if userDefaults.string(forKey: "DeviceName") == peripheral.name! {
+            // ペリフェラルを登録する
+            appDelegate.peripheral = peripheral
+            // 省電力のために探索停止
+            appDelegate.centralManager?.stopScan()
+            
+            // 接続開始
+            print("\(String(describing: appDelegate.peripheral.name!))へ接続開始")
+            appDelegate.centralManager.connect(appDelegate.peripheral, options: nil)
+            
+            // デリゲートを消す
+            appDelegate.centralManager.delegate = nil
+            
+            // デバイス配列をクリアし元の画面に戻る
+            appDelegate.discoveredDevice = []
+            self.dismiss(animated: true, completion: nil)
+        }
+        
         // デバイス配列に追加格納
         appDelegate.discoveredDevice.append(peripheral)
         reload()

@@ -21,6 +21,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
        
     var response = ""
     let maxLength = 18
+    var timer: Timer?
     
     // テキスト入力可能判断用フラグ(0: iPhone 入力可 , 1: iPhone 入力不可)
     var viewEditFlag = 0
@@ -597,7 +598,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         textview.isScrollEnabled = false
         
-        //  読み込みデータの取り出し(文字コードを文字に変換?)
+        //  読み込みデータの取り出し
         let data = characteristic.value
         let dataString = String(data: data!, encoding: String.Encoding.utf8)
         

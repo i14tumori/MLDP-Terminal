@@ -41,8 +41,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
     
-    var timer: Timer?
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.

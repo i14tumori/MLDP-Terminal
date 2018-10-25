@@ -144,6 +144,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
             // デバイス配列をクリアし元の画面に戻る
             appDelegate.discoveredDevice = []
             self.dismiss(animated: true, completion: nil)
+            return
         }
         */
         // デバイス配列に追加格納

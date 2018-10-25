@@ -260,6 +260,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         appDelegate.peripheral.setNotifyValue(false, for: appDelegate.outputCharacteristic)
         appDelegate.centralManager.cancelPeripheralConnection(appDelegate.peripheral)
     }
+    @IBAction func deleteButtonTapped(_ sender: UIButton) {
+        print("deviceDelete button tapped")
+        UserDefaults.standard.removeObject(forKey: "DeviceName")
+    }
     
     // トースト出力関数
     // message : トーストする文字列

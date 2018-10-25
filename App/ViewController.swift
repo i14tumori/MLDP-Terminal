@@ -250,7 +250,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // disconButtonが押されたとき
     @IBAction func disconButtonTapped(_ sender: UIButton) {
         print("disconnect button tapped")
-        
         if appDelegate.outputCharacteristic == nil {
             print("\(appDelegate.peripheralDeviceName) is not ready")
             showToast(message: "デバイス未接続")

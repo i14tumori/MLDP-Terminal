@@ -15,6 +15,8 @@
 		C077D959211AAE1500D81491 /* AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C077D958211AAE1500D81491 /* AppTests.swift */; };
 		C077D964211AAE1500D81491 /* AppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C077D963211AAE1500D81491 /* AppUITests.swift */; };
 		C077D972211AB8EB00D81491 /* SelectDeviceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C077D971211AB8EB00D81491 /* SelectDeviceViewController.swift */; };
+		C07D918721819AFF0090BF42 /* BusyIndicator.xib in Resources */ = {isa = PBXBuildFile; fileRef = C07D918621819AFF0090BF42 /* BusyIndicator.xib */; };
+		C07D918921819E260090BF42 /* BusyIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07D918821819E260090BF42 /* BusyIndicator.swift */; };
 		C07DAE98213237E600E3ECD2 /* CustomTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07DAE97213237E600E3ECD2 /* CustomTextView.swift */; };
 /* End PBXBuildFile section */
 
@@ -50,6 +52,8 @@
 		C077D963211AAE1500D81491 /* AppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUITests.swift; sourceTree = "<group>"; };
 		C077D965211AAE1500D81491 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C077D971211AB8EB00D81491 /* SelectDeviceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectDeviceViewController.swift; sourceTree = "<group>"; };
+		C07D918621819AFF0090BF42 /* BusyIndicator.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BusyIndicator.xib; sourceTree = "<group>"; };
+		C07D918821819E260090BF42 /* BusyIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusyIndicator.swift; sourceTree = "<group>"; };
 		C07DAE97213237E600E3ECD2 /* CustomTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTextView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -105,6 +109,8 @@
 				C077D945211AAE1400D81491 /* ViewController.swift */,
 				C077D971211AB8EB00D81491 /* SelectDeviceViewController.swift */,
 				C07DAE97213237E600E3ECD2 /* CustomTextView.swift */,
+				C07D918821819E260090BF42 /* BusyIndicator.swift */,
+				C07D918621819AFF0090BF42 /* BusyIndicator.xib */,
 				C077D947211AAE1400D81491 /* Main.storyboard */,
 				C077D94A211AAE1500D81491 /* Assets.xcassets */,
 				C077D94C211AAE1500D81491 /* LaunchScreen.storyboard */,
@@ -237,6 +243,7 @@
 			files = (
 				C077D94E211AAE1500D81491 /* LaunchScreen.storyboard in Resources */,
 				C077D94B211AAE1500D81491 /* Assets.xcassets in Resources */,
+				C07D918721819AFF0090BF42 /* BusyIndicator.xib in Resources */,
 				C077D949211AAE1400D81491 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -266,6 +273,7 @@
 				C077D946211AAE1400D81491 /* ViewController.swift in Sources */,
 				C077D972211AB8EB00D81491 /* SelectDeviceViewController.swift in Sources */,
 				C077D944211AAE1400D81491 /* AppDelegate.swift in Sources */,
+				C07D918921819E260090BF42 /* BusyIndicator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

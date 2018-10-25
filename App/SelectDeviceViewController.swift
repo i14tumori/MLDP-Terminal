@@ -19,7 +19,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.]
+        // Do any additional setup after loading the view.
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -27,6 +27,18 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         
         // centralManagerのデリゲートをセット
         appDelegate.centralManager.delegate = self
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(true)
+        
+        print("--- viewDidAppear ---")
+        // Indicator表示開始
+        BusyIndicator.sharedManager.show()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            // Indicator表示終了
+            BusyIndicator.sharedManager.dismiss()
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -58,11 +70,11 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // ペリフェラルを登録する
         appDelegate.peripheral = appDelegate.discoveredDevice[indexPath.row]
-        
+        /*
         // ペリフェラルを記憶する
         userDefaults.set(appDelegate.peripheral.name!, forKey: "DeviceName")
         userDefaults.synchronize()
-        
+        */
         // 省電力のために探索停止
         appDelegate.centralManager?.stopScan()
         
@@ -114,6 +126,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     
     // ペリフェラルを発見したときに呼ばれる
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        /*
         print("記憶したデバイス名 : \(String(describing: userDefaults.string(forKey: "DeviceName")))")
         if userDefaults.string(forKey: "DeviceName") == peripheral.name! {
             // ペリフェラルを登録する
@@ -132,7 +145,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
             appDelegate.discoveredDevice = []
             self.dismiss(animated: true, completion: nil)
         }
-        
+        */
         // デバイス配列に追加格納
         appDelegate.discoveredDevice.append(peripheral)
         reload()

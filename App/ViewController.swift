@@ -17,8 +17,8 @@ extension String {
     }
 }
 
-class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITextViewDelegate {
-       
+class ViewController: UIViewController, UITextViewDelegate {
+//class ViewController: UIViewController, UITextViewDelegate {
     var response = ""
     let maxLength = 18
     var timer: Timer?
@@ -41,9 +41,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
     
+    let bleController = BLEControll()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        // BLEのデリゲートを設定
+        BLEControll().delegateSet()
         
         // TextViewに枠線をつける
         textview.layer.borderColor = UIColor.gray.cgColor
@@ -64,16 +69,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // テキストのフォント設定
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
-        
-        // インスタンスの生成および初期化
-        appDelegate.centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(true)
-        
-        print("centralManagerDelegate set")
-        appDelegate.centralManager.delegate = self
     }
 
     override func didReceiveMemoryWarning() {
@@ -81,7 +76,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // Dispose of any resources that can be recreated.
     }
 
-    /* Bluetooth以外関連メソッド */
+    /* メソッド群 */
     
     // タッチ開始時のタッチイベント
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -102,7 +97,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if text == "\n" {
             if appDelegate.outputCharacteristic == nil {
                 print("\(appDelegate.peripheralDeviceName) is not ready")
-                showToast(message: "デバイス未接続")
+                appDelegate.showToast(message: "デバイス未接続", classView: self.view)
             }
             else {
                 // レスポンスがあるまで書き込み不可にする
@@ -244,45 +239,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // scanButtonが押されたとき
     @IBAction func scanButtonTapped(_ sender: UIButton) {
         print("scan button tapped")
-        appDelegate.centralManager.scanForPeripherals(withServices: [appDelegate.mldpService_UUID], options: nil)
+//        appDelegate.centralManager.scanForPeripherals(withServices: [appDelegate.mldpService_UUID], options: nil)
+        BLEControll().scan()
     }
     
     // disconButtonが押されたとき
     @IBAction func disconButtonTapped(_ sender: UIButton) {
         print("disconnect button tapped")
-        
-        if appDelegate.outputCharacteristic == nil {
-            print("\(appDelegate.peripheralDeviceName) is not ready")
-            showToast(message: "デバイス未接続")
-            return
-        }
-        
-        appDelegate.peripheral.setNotifyValue(false, for: appDelegate.outputCharacteristic)
-        appDelegate.centralManager.cancelPeripheralConnection(appDelegate.peripheral)
+        BLEControll().disconnect()
     }
+    
     @IBAction func deleteButtonTapped(_ sender: UIButton) {
         print("deviceDelete button tapped")
         UserDefaults.standard.removeObject(forKey: "DeviceName")
-    }
-    
-    // トースト出力関数
-    // message : トーストする文字列
-    func showToast(message: String) {
-        let toastLabel = UILabel(frame: CGRect(x: self.view.frame.size.width/2 - 150, y: self.view.frame.size.height/2, width: 300, height: 35))
-        toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-        toastLabel.textColor = UIColor.white
-        toastLabel.textAlignment = .center;
-        toastLabel.font = UIFont(name: "Montserrat-Light", size: 12.0)
-        toastLabel.text = message
-        toastLabel.alpha = 1.0
-        toastLabel.layer.cornerRadius = 10;
-        toastLabel.clipsToBounds  =  true
-        self.view.addSubview(toastLabel)
-        UIView.animate(withDuration: 4.0, delay: 0.1, options: .curveEaseOut, animations: {
-            toastLabel.alpha = 0.0
-        }, completion: {(isCompleted) in
-            toastLabel.removeFromSuperview()
-        })
     }
     
     /* キーボード追加ボタンイベント */
@@ -481,118 +450,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    /* Central関連メソッド */
-    
-    // centralManagerの状態が変化すると呼ばれる
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        switch central.state {
-        case .poweredOff:
-            print("Bluetooth電源 : OFF")
-            showToast(message: "Bluetoothの電源がOFF")
-        case .poweredOn:
-            print("Bluetooth電源 : ON")
-        case .resetting:
-            print("レスティング状態")
-        case .unauthorized:
-            print("非認証状態")
-        case .unknown:
-            print("不明")
-        case .unsupported:
-            print("非対応")
-        }
-    }
-    
-    // ペリフェラルへの接続が成功すると呼ばれる
-    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        print("接続成功")
-        print("接続デバイス:\(appDelegate.peripheral.name!)")
-        appDelegate.centralManager.stopScan()
-        print("探索終了")
-        
-        // サービス探索結果を受け取るためにデリゲートをセット
-        appDelegate.peripheral.delegate = self
-        
-        // サービス探索開始
-        appDelegate.peripheral.discoverServices([appDelegate.mldpService_UUID])
-    }
-    
-    /* Peripheral関連メソッド */
-    
-    // サービスを発見すると呼ばれる
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        // エラーのときは原因を出力してreturn
-        if error != nil {
-            print(error.debugDescription)
-            return
-        }
-        
-        // 代入されたservicesがnilまたはカウントが0のときにguard文内へ進む
-        guard let services = peripheral.services, services.count > 0 else {
-            print("no services")
-            return
-        }
-        
-        print("\(services.count)個のサービスを検出 \(services)")
-        // サービスの数だけキャラクタリスティック探索
-        for service in services {
-            // キャラクタリスティック探索開始
-            appDelegate.peripheral.discoverCharacteristics(nil, for: service)
-        }
-    }
-    
-    // キャラクタリスティックを発見すると呼ばれる
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        if error != nil {
-            print(error.debugDescription)
-            return
-        }
-        
-        // 代入されたcharacteristicsがnilまたはカウントが0の時にguard文内へ進む
-        guard let characteristics = service.characteristics, characteristics.count > 0 else {
-            print("no characteristics")
-            return
-        }
-        
-        print("\(characteristics.count)個のキャラクタリスティックを検出 \(characteristics)")
-        
-        // whereを満たす間characteristicsからcharacteristicへ一つずつ取り出す
-        // 複数個あってもMLDPのキャラクタリスティックにのみ反応するようにしている
-        for characteristic in characteristics where characteristic.uuid.isEqual(appDelegate.mldpCharacteristic_UUID1) {
-            appDelegate.outputCharacteristic = characteristic
-            print("Write Indicate UUID を発見")
-            // characteristicの値を読み取る
-            peripheral.readValue(for: characteristic)
-            
-            // 更新通知受け取りを開始する
-            peripheral.setNotifyValue(true, for: characteristic)
-            
-            // 書き込みデータの準備(文字を文字コードに変換?)
-            let str = "App:on\r\n"
-            let data = str.data(using: String.Encoding.utf8)
-            
-            // ペリフェラルにデータを書き込む
-            peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
-            
-            showToast(message: "デバイス接続")
-        }
-    }
-    
-    // Notify開始/停止時に呼ばれる
-    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
-        if error != nil {
-            print(error.debugDescription)
-        } else {
-            print("Notify状態更新 characteristic UUID : \(characteristic.uuid), isNotifying : \(characteristic.isNotifying)")
-        }
-    }
-    
-    // データ更新時に呼ばれる
-    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if error != nil {
-            print(error.debugDescription)
-            return
-        }
-        
+    // データ受信時に呼ばれる
+    func dataUpdate(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic) {
         // 書き込み不可なら何もしない
         if viewEditFlag == 0 {
             return

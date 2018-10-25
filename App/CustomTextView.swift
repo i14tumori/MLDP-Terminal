@@ -93,5 +93,9 @@ class CustomTextView: UITextView {
     override func caretRect(for position: UITextPosition) -> CGRect {
         return CGRect.zero
     }
+    
+    func test() {
+        print("hello")
+    }
 
 }

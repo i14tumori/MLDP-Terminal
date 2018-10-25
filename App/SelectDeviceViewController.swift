@@ -9,7 +9,7 @@
 import UIKit
 import CoreBluetooth
 
-class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITableViewDelegate, UITableViewDataSource {
+class SelectDeviceViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet weak var tableview: UITableView!
     
     // AppDelegate内の変数呼び出し用
@@ -20,13 +20,6 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.]
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(true)
-        
-        // centralManagerのデリゲートをセット
-        appDelegate.centralManager.delegate = self
     }
 
     override func didReceiveMemoryWarning() {
@@ -70,9 +63,6 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         print("\(String(describing: appDelegate.peripheral.name!))へ接続開始")
         appDelegate.centralManager.connect(appDelegate.peripheral, options: nil)
         
-        // デリゲートを消す
-        appDelegate.centralManager.delegate = nil
-        
         // デバイス配列をクリアし元の画面に戻る
         appDelegate.discoveredDevice = []
         self.dismiss(animated: true, completion: nil)
@@ -91,55 +81,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         appDelegate.discoveredDevice = []
         self.dismiss(animated: true, completion: nil)
     }
-    
-    /* Central関連メソッド */
-    
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        print("CentralManagerState: \(central.state)")
-        switch central.state {
-        case .poweredOff:
-            print("Bluetoothの電源がOff")
-        case .poweredOn:
-            print("Bluetoothの電源はOn")
-        case .resetting:
-            print("レスティング状態")
-        case .unauthorized:
-            print("非認証状態")
-        case .unknown:
-            print("不明")
-        case .unsupported:
-            print("非対応")
-        }
-    }
-    
-    // ペリフェラルを発見したときに呼ばれる
-    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        /// ??? 繋がらない
-        print("記憶したデバイス名 : \(String(describing: userDefaults.string(forKey: "DeviceName")))")
-        if userDefaults.string(forKey: "DeviceName") == peripheral.name! {
-            // ペリフェラルを登録する
-            appDelegate.peripheral = peripheral
-            // 省電力のために探索停止
-            appDelegate.centralManager?.stopScan()
-            
-            // 接続開始
-            print("\(String(describing: appDelegate.peripheral.name!))へ接続開始")
-            appDelegate.centralManager.connect(appDelegate.peripheral, options: nil)
-            
-            // デリゲートを消す
-            appDelegate.centralManager.delegate = nil
-            
-            // デバイス配列をクリアし元の画面に戻る
-            appDelegate.discoveredDevice = []
-            self.dismiss(animated: true, completion: nil)
-            return
-        }
-        
-        // デバイス配列に追加格納
-        appDelegate.discoveredDevice.append(peripheral)
-        reload()
-    }
-    
+
     /*
     // MARK: - Navigation
 

@@ -143,8 +143,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
                 // カーソル用空白文字,プロンプトを取り除く
                 if txText.count > 1 {
-                    // カーソル用空白文字の除去
-                    txText = String(txText.prefix(txText.count-1))
+                    // カーソルが文末にあるとき
+                    if curIsSentenceEnd() && txText.suffix(1) == "_" {
+                        // カーソル用空白文字の除去
+                        txText = String(txText.prefix(txText.count-1))
+                    }
                     // プロンプトの除去
                     txText = String(txText.suffix(txText.count-1))
                 }
@@ -161,9 +164,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     scrollToButtom()
                 }
                 else {
-                    
-                    print("isNumeric Check\n\(txText) is \(txText.isNumeric(txText))")
-                    
                     /* 商　quotient   余り　remainder */
                     let remainder = txText.count % maxLength
                     
@@ -1030,7 +1030,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         cursor[1] = 2
     }
     
-    // カーソルの文末判断をする関数
+    // カーソルの最後尾判断をする関数
     func curIsEnd() -> Bool {
         print("--- curIsEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
@@ -1040,6 +1040,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("textCount : \(textCount)")
         // カーソルが最後尾を示しているならtrueを返す
         if cursor[0] == textCount.count && cursor[1] == textCount[textCount.count - 1] {
+            return true
+        }
+        return false
+    }
+    
+    // カーソルの文末判断をする関数
+    func curIsSentenceEnd() -> Bool {
+        print("curIsSentenceEnd ---")
+        print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
+        
+        // textviewの行数、各行の文字数を取得する
+        let textCount = getTextCount()
+        print("textCount : \(textCount)")
+        // カーソルが文末を示しているならtrueを返す
+        if cursor[1] == textCount[cursor[0] - 1] {
             return true
         }
         return false

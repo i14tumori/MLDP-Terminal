@@ -31,12 +31,13 @@ class BusyIndicator: UIView {
     }()
     
     // 表示する
-    func show() {
+    func show(controller: UIViewController) {
         // 画面全体を覆わせる
         self.frame = UIScreen.main.bounds
+        print("rootViewController : \(String(describing: controller))")
         // Viewを追加して表示させる
-        let vc = UIApplication.shared.keyWindow?.rootViewController
-        vc?.view.addSubview(self)
+        let vc = controller
+        vc.view.addSubview(self)
     }
     
     // 非表示にする

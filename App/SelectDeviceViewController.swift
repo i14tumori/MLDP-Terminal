@@ -25,15 +25,46 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(true)
         
+        appDelegate.centralManager.scanForPeripherals(withServices: [appDelegate.mldpService_UUID], options: nil)
+        
         // centralManagerのデリゲートをセット
         appDelegate.centralManager.delegate = self
+        
+        print("DeviceName : \(String(describing: self.userDefaults.string(forKey: "DeviceName")))")
         
         let controller: UIViewController = self
         // Indicator表示開始
         BusyIndicator.sharedManager.show(controller: controller)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + DispatchTimeInterval.milliseconds(500)) {
             // Indicator表示終了
             BusyIndicator.sharedManager.dismiss()
+            print("--- indicator ---")
+            // 以前接続したペリフェラルの名前が存在するとき
+            if let deviceName = self.userDefaults.string(forKey: "DeviceName") {
+                // 発見されたペリフェラルの個数
+                let deviceCount = self.appDelegate.discoveredDevice.count
+                print("deviceCount : \(deviceCount)")
+                for i in 0..<deviceCount {
+                    print("i : \(i)")
+                    // 以前接続したペリフェラルが検出されたとき
+                    if deviceName == self.appDelegate.discoveredDevice[i].name {
+                        // ペリフェラルを登録する
+                        self.appDelegate.peripheral = self.appDelegate.discoveredDevice[i]
+                        
+                        // 省電力のために探索停止
+                        self.appDelegate.centralManager?.stopScan()
+                        
+                        // 接続開始
+                        print("\(String(describing: self.appDelegate.peripheral.name!))へ接続開始")
+                        self.appDelegate.centralManager.connect(self.appDelegate.peripheral, options: nil)
+                        
+                        // デバイス配列をクリアし元の画面に戻る
+                        self.appDelegate.discoveredDevice = []
+                        self.dismiss(animated: true, completion: nil)
+                        break
+                    }
+                }
+            }
         }
     }
 
@@ -66,20 +97,17 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // ペリフェラルを登録する
         appDelegate.peripheral = appDelegate.discoveredDevice[indexPath.row]
-        /*
+        
         // ペリフェラルを記憶する
         userDefaults.set(appDelegate.peripheral.name!, forKey: "DeviceName")
         userDefaults.synchronize()
-        */
+ 
         // 省電力のために探索停止
         appDelegate.centralManager?.stopScan()
         
         // 接続開始
         print("\(String(describing: appDelegate.peripheral.name!))へ接続開始")
         appDelegate.centralManager.connect(appDelegate.peripheral, options: nil)
-        
-        // デリゲートを消す
-        appDelegate.centralManager.delegate = nil
         
         // デバイス配列をクリアし元の画面に戻る
         appDelegate.discoveredDevice = []
@@ -122,27 +150,6 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     
     // ペリフェラルを発見したときに呼ばれる
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        /*
-        print("記憶したデバイス名 : \(String(describing: userDefaults.string(forKey: "DeviceName")))")
-        if userDefaults.string(forKey: "DeviceName") == peripheral.name! {
-            // ペリフェラルを登録する
-            appDelegate.peripheral = peripheral
-            // 省電力のために探索停止
-            appDelegate.centralManager?.stopScan()
-            
-            // 接続開始
-            print("\(String(describing: appDelegate.peripheral.name!))へ接続開始")
-            appDelegate.centralManager.connect(appDelegate.peripheral, options: nil)
-            
-            // デリゲートを消す
-            appDelegate.centralManager.delegate = nil
-            
-            // デバイス配列をクリアし元の画面に戻る
-            appDelegate.discoveredDevice = []
-            self.dismiss(animated: true, completion: nil)
-            return
-        }
-        */
         // デバイス配列に追加格納
         appDelegate.discoveredDevice.append(peripheral)
         reload()

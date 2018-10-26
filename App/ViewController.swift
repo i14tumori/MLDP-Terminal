@@ -244,7 +244,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // scanButtonが押されたとき
     @IBAction func scanButtonTapped(_ sender: UIButton) {
         print("scan button tapped")
-        appDelegate.centralManager.scanForPeripherals(withServices: [appDelegate.mldpService_UUID], options: nil)
     }
     
     // disconButtonが押されたとき
@@ -259,6 +258,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         appDelegate.peripheral.setNotifyValue(false, for: appDelegate.outputCharacteristic)
         appDelegate.centralManager.cancelPeripheralConnection(appDelegate.peripheral)
     }
+    
     @IBAction func deleteButtonTapped(_ sender: UIButton) {
         print("deviceDelete button tapped")
         UserDefaults.standard.removeObject(forKey: "DeviceName")

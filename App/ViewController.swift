@@ -222,6 +222,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // clearButtonが押されたとき
+    // textViewをクリアする
     @IBAction func clearButtonTapped(_ sender: UIButton) {
         print("clear button tapped")
         // カーソル表示
@@ -244,6 +245,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // scanButtonが押されたとき
+    // ペリフェラルスキャンを開始する
     @IBAction func scanButtonTapped(_ sender: UIButton) {
         print("scan button tapped")
     }
@@ -261,6 +263,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         appDelegate.centralManager.cancelPeripheralConnection(appDelegate.peripheral)
     }
     
+    // deleteButtonが押されたとき
+    // 記憶デバイスを消去する
     @IBAction func deleteButtonTapped(_ sender: UIButton) {
         print("deviceDelete button tapped")
         UserDefaults.standard.removeObject(forKey: "DeviceName")
@@ -519,7 +523,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // ペリフェラルとの切断が完了すると呼ばれる
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        print("disconnectperiferal complete")
+        print("disconnect complete")
+        // データを初期化する
+        appDelegate.isScanning = false
+        appDelegate.centralManager = CBCentralManager()
+        appDelegate.settingCharacteristic = nil
+        appDelegate.outputCharacteristic = nil
     }
     
     /* Peripheral関連メソッド */

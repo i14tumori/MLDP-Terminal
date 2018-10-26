@@ -25,6 +25,9 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(true)
         
+        print("--- viewWillAppear ---")
+        print("centralManager : \(String(describing: appDelegate.centralManager))")
+        
         appDelegate.centralManager.scanForPeripherals(withServices: [appDelegate.mldpService_UUID], options: nil)
         
         // centralManagerのデリゲートをセット

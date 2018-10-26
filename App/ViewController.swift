@@ -11,9 +11,32 @@ import CoreBluetooth
 
 // String型の拡張メソッド
 extension String {
-    // 英数字の判定
+    // String型を一文字ずつの配列に分解する関数
+    func partition(_ text: String) -> [String] {
+        let count = text.count
+        var origin = text
+        var splitText = [String]()
+        for _ in 0..<count {
+            splitText.append(String(origin.prefix(1)))
+            origin = String(origin.suffix(origin.count - 1))
+        }
+        print("--- partition ---")
+        print("partition : \(splitText)")
+        return splitText
+    }
+    // 英数字の判定をする関数
     func isAlphanumeric(_ text: String) -> Bool {
         return text >= "\0" && text <= "~"
+    }
+    // 数字の判定をする関数
+    func isNumeric(_ text: String) -> Bool {
+        let partText = text.partition(text)
+        for i in 0..<text.count {
+            if partText[i] < "0" || partText[i] > "9" {
+                return false
+            }
+        }
+        return true
     }
 }
 
@@ -25,6 +48,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // テキスト入力可能判断用フラグ(0: iPhone 入力可 , 1: iPhone 入力不可)
     var viewEditFlag = 0
+    
+    // エスケープシーケンス判断用フラグ
+    var escSeq = 0
+    // エスケープシーケンス変位記憶変数
+    var escDisplace = [0, 0]
     
     // カーソル位置記憶変数
     var cursor = [0, 0]
@@ -133,6 +161,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     scrollToButtom()
                 }
                 else {
+                    
+                    print("isNumeric Check\n\(txText) is \(txText.isNumeric(txText))")
+                    
                     /* 商　quotient   余り　remainder */
                     let remainder = txText.count % maxLength
                     
@@ -486,6 +517,50 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    /* エスケープシーケンスメソッド */
+    
+    // 上にn移動する関数
+    func escUp(n: Int) {
+        print("--- escUp ---")
+        print("n : \(n)")
+    }
+    
+    // 下にn移動する関数
+    func escDown(n: Int) {
+        print("--- escDown ---")
+        print("n : \(n)")
+    }
+    
+    // 右にn移動する関数
+    func escRight(n: Int) {
+        print("--- escRight ---")
+        print("n : \(n)")
+    }
+    
+    // 左にn移動する関数
+    func escLeft(n: Int) {
+        print("--- escLeft ---")
+        print("n : \(n)")
+    }
+    
+    // n行下の先頭に移動する関数
+    func escDownTop(n: Int) {
+        print("--- escDownTop ---")
+        print("n : \(n)")
+    }
+    
+    // n行上の先頭に移動する関数
+    func escUpTop(n: Int) {
+        print("--- escUpTop ---")
+        print("n : \(n)")
+    }
+    
+    // 現在位置と関係なく上からn、左からmの場所に移動する関数
+    func escRoot(n: Int, m: Int) {
+        print("--- escRoot ---")
+        print("n : \(n), m : \(m)")
+    }
+    
     /* Central関連メソッド */
     
     // centralManagerの状態が変化すると呼ばれる
@@ -631,7 +706,103 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             // iPhoneからの書き込みを許可する
             viewEditFlag = 0
+            // エスケープシーケンス判定を初期化
+            escSeq = 0
         }
+        // エスケープシーケンスのとき
+        else if escSeq > 0{
+            switch escSeq {
+            // シーケンス一文字目
+            case 1:
+                // 正しいシーケンスのとき
+                if dataString! == "[" {
+                    escSeq = 2
+                }
+                // シーケンスではなかったとき
+                else {
+                    print("NO ESC_SEQ")
+                    escSeq = 0
+                }
+            // シーケンス二文字目
+            case 2:
+                // 正しいシーケンスのとき
+                if dataString!.isNumeric(dataString!) {
+                    // 変位を記憶する
+                    escDisplace[0] = Int(dataString!)!
+                    escSeq = 3
+                }
+                // シーケンスではなかったとき
+                else {
+                    print("NO ESC_SEQ")
+                    escSeq = 0
+                }
+            // シーケンス三文字目
+            case 3:
+                switch dataString! {
+                // 正しいシーケンスのとき
+                case "A":
+                    escUp(n: escDisplace[0])
+                    escSeq = 0
+                case "B":
+                    escDown(n: escDisplace[0])
+                    escSeq = 0
+                case "C":
+                    escRight(n: escDisplace[0])
+                    escSeq = 0
+                case "D":
+                    escLeft(n: escDisplace[0])
+                    escSeq = 0
+                case "E":
+                    escDownTop(n: escDisplace[0])
+                    escSeq = 0
+                case "F":
+                    escUpTop(n: escDisplace[0])
+                    escSeq = 0
+                case "G":
+                    escRoot(n: cursor[0], m: escDisplace[0])
+                    escSeq = 0
+                case ";":
+                    escSeq = 4
+                // シーケンスではなかったとき
+                default:
+                    print("NO ESC_SEQ")
+                    escSeq = 0
+                }
+            // シーケンス四文字目
+            case 4:
+                // 正しいシーケンスのとき
+                if dataString!.isNumeric(dataString!) {
+                    // 変位を記憶する
+                    escDisplace[1] = Int(dataString!)!
+                    escSeq = 5
+                }
+                // シーケンスではなかったとき
+                else {
+                    print("NO ESC_SEQ")
+                    escSeq = 0
+                }
+            // シーケンス五文字目
+            case 5:
+                // 正しいシーケンスのとき
+                if dataString! == "H" || dataString! == "f" {
+                    escRoot(n: escDisplace[0], m: escDisplace[1])
+                    escSeq = 0
+                }
+                // シーケンスではなかったとき
+                else {
+                    print("NO ESC_SEQ")
+                    escSeq = 0
+                }
+            default: break
+            }
+        }
+        // エスケープのとき　(テスト用に # で動作する)
+        else if dataString! == "\u{1b}" || dataString! == "#" {
+            escSeq = 1
+        }
+            
+        /* デバッグ用のカーソル移動 */
+            
         // Ctrl+a(カーソルを行先頭に移動)のとき
         else if dataString! == "\u{01}" {
             print("move to Top")
@@ -650,10 +821,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         else if dataString! == "\u{06}" {
             moveRight()
         }
-        // エスケープのとき
-        else if dataString! == "\u{1b}" {
             
-        }
+        /* デバッグ用のカーソル移動 ここまで */
+            
         // それ以外のとき
         else {
             // textViewに読み込みデータを書き込む

@@ -9,12 +9,14 @@
 import Foundation
 import UIKit
 
+// 処理中の画面を表示するためのクラス
 class BusyIndicator: UIView {
     // 基本的な見た目などの初期化
     private func commonInit() {
         let bundle = Bundle(for: type(of: self))
         let nib = UINib(nibName: "BusyIndicator", bundle: bundle)
         let view = nib.instantiate(withOwner: self, options: nil).first as! UIView
+        view.backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.5)
         self.addSubview(view)
         
         view.translatesAutoresizingMaskIntoConstraints = false

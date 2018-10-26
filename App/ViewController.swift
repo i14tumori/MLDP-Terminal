@@ -48,7 +48,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // TextViewに枠線をつける
         textview.layer.borderColor = UIColor.gray.cgColor
         textview.layer.borderWidth = 0.5
-        textview.layer.cornerRadius = 5
  
         // TextViewのデリゲートをセット
         textview.delegate = self

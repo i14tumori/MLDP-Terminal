@@ -35,7 +35,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         let controller: UIViewController = self
         // Indicator表示開始
         BusyIndicator.sharedManager.show(controller: controller)
-        DispatchQueue.main.asyncAfter(deadline: .now() + DispatchTimeInterval.milliseconds(500)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + DispatchTimeInterval.milliseconds(1000)) {
             // Indicator表示終了
             BusyIndicator.sharedManager.dismiss()
             print("--- indicator ---")
@@ -50,14 +50,8 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
                     if deviceName == self.appDelegate.discoveredDevice[i].name {
                         // ペリフェラルを登録する
                         self.appDelegate.peripheral = self.appDelegate.discoveredDevice[i]
-                        
-                        // 省電力のために探索停止
-                        self.appDelegate.centralManager?.stopScan()
-                        
-                        // 接続開始
-                        print("\(String(describing: self.appDelegate.peripheral.name!))へ接続開始")
-                        self.appDelegate.centralManager.connect(self.appDelegate.peripheral, options: nil)
-                        
+                        // 接続を開始する
+                        self.connect()
                         // デバイス配列をクリアし元の画面に戻る
                         self.appDelegate.discoveredDevice = []
                         self.dismiss(animated: true, completion: nil)
@@ -101,17 +95,20 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         // ペリフェラルを記憶する
         userDefaults.set(appDelegate.peripheral.name!, forKey: "DeviceName")
         userDefaults.synchronize()
- 
-        // 省電力のために探索停止
-        appDelegate.centralManager?.stopScan()
-        
-        // 接続開始
-        print("\(String(describing: appDelegate.peripheral.name!))へ接続開始")
-        appDelegate.centralManager.connect(appDelegate.peripheral, options: nil)
-        
+        // 接続を開始する
+        connect()
         // デバイス配列をクリアし元の画面に戻る
         appDelegate.discoveredDevice = []
         self.dismiss(animated: true, completion: nil)
+    }
+    
+    // 接続を開始する関数
+    func connect() {
+        // 省電力のために探索停止
+        appDelegate.centralManager?.stopScan()
+        // 接続開始
+        print("\(String(describing: appDelegate.peripheral.name!))へ接続開始")
+        appDelegate.centralManager.connect(appDelegate.peripheral, options: nil)
     }
     
     // デバイス配列をクリアした後再読み込みしたいけど

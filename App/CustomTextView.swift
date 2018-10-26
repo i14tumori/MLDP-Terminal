@@ -67,6 +67,7 @@ class CustomTextView: UITextView {
         let leftLongPress = UILongPressGestureRecognizer(target: ViewController(), action: #selector(ViewController.leftPress(gesture:)))
         leftLongPress.minimumPressDuration = 0.2
         leftButton.addGestureRecognizer(leftLongPress)
+        print("leftLongPress set")
         
         // 右矢印キーの作成、設定
         let rightButton = UIButton(frame: CGRect())

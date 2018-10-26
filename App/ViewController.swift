@@ -238,6 +238,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         commandList.append("")
         // コマンド添字初期化
         commandIndex = 0
+        
+        // iPhoneの入力を許可
+        viewEditFlag = 0
     }
     
     // scanButtonが押されたとき
@@ -514,6 +517,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         appDelegate.peripheral.discoverServices([appDelegate.mldpService_UUID])
     }
     
+    // ペリフェラルとの切断が完了すると呼ばれる
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        print("disconnectperiferal complete")
+    }
+    
     /* Peripheral関連メソッド */
     
     // サービスを発見すると呼ばれる
@@ -632,6 +640,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // Ctrl+f(カーソルを一文字右に移動)のとき
         else if dataString! == "\u{06}" {
             moveRight()
+        }
+        // エスケープのとき
+        else if dataString! == "\u{1b}" {
+            
         }
         // それ以外のとき
         else {

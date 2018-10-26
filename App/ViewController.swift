@@ -46,6 +46,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     let maxLength = 18
     var timer: Timer?
     
+    // プロンプトの長さ
+    var promptLength = 1
+    
     // テキスト入力可能判断用フラグ(0: iPhone 入力可 , 1: iPhone 入力不可)
     var viewEditFlag = 0
     
@@ -84,7 +87,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         commandList.append("")
         
         // プロンプト,カーソル表示
-       writePrompt("")
+        clearButtonTapped(UIButton())
         
         // カーソルの位置を初期化する
         cursor[0] = 1
@@ -144,7 +147,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // カーソル用空白文字,プロンプトを取り除く
                 if txText.count > 1 {
                     // カーソルが文末にあるとき
-                    if curIsSentenceEnd() && txText.suffix(1) == "_" {
+                    if curIsSentenceEnd() {
                         // カーソル用空白文字の除去
                         txText = String(txText.prefix(txText.count-1))
                     }
@@ -152,60 +155,47 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     txText = String(txText.suffix(txText.count-1))
                 }
                 
-                // コマンドが入力されていなければプロンプトを表示する
-                if txText == "" {
-                    // プロンプトを追記
-                    writePrompt(textview.text)
-                    // カーソルを表示する
-                    viewCursor()
-                    // 書き込みを許可する
-                    viewEditFlag = 0
-                    // 画面をスクロールする
-                    scrollToButtom()
-                }
-                else {
-                    /* 商　quotient   余り　remainder */
-                    let remainder = txText.count % maxLength
-                    
-                    // 文字列を分割しながら送信する
-                    for i in stride(from: 0, to: txText.count - remainder, by: maxLength) {
-                        let splitText = txText[txText.index(txText.startIndex, offsetBy: i)..<txText.index(txText.startIndex, offsetBy: i + maxLength)]
-                        let data = splitText.data(using: String.Encoding.utf8)
-                        // ペリフェラルにデータを書き込む
-                        appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
-                    }
-                    
-                    let splitText = String(txText.suffix(remainder)) + "\r\n"
+                /* 商　quotient   余り　remainder */
+                let remainder = txText.count % maxLength
+                
+                // 文字列を分割しながら送信する
+                for i in stride(from: 0, to: txText.count - remainder, by: maxLength) {
+                    let splitText = txText[txText.index(txText.startIndex, offsetBy: i)..<txText.index(txText.startIndex, offsetBy: i + maxLength)]
                     let data = splitText.data(using: String.Encoding.utf8)
-                    
                     // ペリフェラルにデータを書き込む
                     appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
-                    
-                    // 改行を追記する
-                    if curIsEnd() {
-                        textview.text = textview.text.prefix(textview.text.count - 1) + "\n" + textview.text.suffix(1)
-                    }
-                    else {
-                        textview.text = textview.text + "\n_"
-                    }
-                    
-                    // コマンド記憶サイズを超えている場合は古い方から削除する
-                    if commandList.count >= maxLength {
-                        commandList.removeFirst()
-                    }
-                    // 次のコマンドを記憶する準備
-                    commandList.append("")
-                    
-                    // commandListの添字を初期化する
-                    commandIndex = 0
-                    
-                    // カーソルをずらす
-                    cursor[0] = cursor[0] + 1
-                    cursor[1] = 1
-                    
-                    // カーソルを表示する
-                    viewCursor()
                 }
+                
+                let splitText = String(txText.suffix(remainder)) + "\r\n"
+                let data = splitText.data(using: String.Encoding.utf8)
+                
+                // ペリフェラルにデータを書き込む
+                appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
+                    
+                // 改行を追記する
+                if curIsEnd() {
+                    textview.text = textview.text.prefix(textview.text.count - 1) + "\n" + textview.text.suffix(1)
+                }
+                else {
+                    textview.text = textview.text + "\n_"
+                }
+                    
+                // コマンド記憶サイズを超えている場合は古い方から削除する
+                if commandList.count >= maxLength {
+                    commandList.removeFirst()
+                }
+                // 次のコマンドを記憶する準備
+                commandList.append("")
+                    
+                // commandListの添字を初期化する
+                commandIndex = 0
+                    
+                // カーソルをずらす
+                cursor[0] = cursor[0] + 1
+                cursor[1] = 1
+                    
+                // カーソルを表示する
+                viewCursor()
             }
         }
         // 空文字(DELキー)のとき
@@ -238,9 +228,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // コマンドとして追記する
             commandList[commandList.count - 1].append(text)
             
-            // カーソルをずらす
-            cursor[1] = cursor[1] + 1
-            
             // カーソルを表示する
             viewCursor()
         }
@@ -256,14 +243,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // textViewをクリアする
     @IBAction func clearButtonTapped(_ sender: UIButton) {
         print("clear button tapped")
-        // カーソル表示
-        writePrompt("")
-        
-        // カーソルの位置を初期化する
-        cursor[0] = 1
+        // textviewをクリアする
+        textview.text = "_"
         
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
+        
+        // カーソル位置を初期化する
+        cursor[0] = 1
+        cursor[1] = 1
+        // カーソル表示
+        writePrompt()
         
         // コマンド記憶の初期化
         commandList.removeAll()
@@ -358,22 +348,29 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // textview内の文字列を改行で分割する
             let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
             
-            // 最後の2行以外を改行ありで結合する
+            // 最後の行以外を改行ありで結合する
             var allText = ""
-            for i in 0..<splitArray.count - 2 {
+            for i in 0..<splitArray.count - 1 {
                 allText.append(splitArray[i] + "\n")
             }
-            // 最後から2番目の行を改行なしで結合する
-            allText.append(splitArray[splitArray.count - 2])
+            
+            // カーソル文字を付け足し，textViewに設定する
+            allText.append("_")
+            textview.text = allText
+            
+            // textviewの文字数を取得する
+            let count = getTextCount()
+            
+            // カーソル位置をずらす
+            cursor[0] = count.count
+            cursor[1] = count[cursor[0] - 1]
             
             // コマンドを書き換える
-            writePrompt(allText)
+            writePrompt()
             writeTextView(commandList[(commandList.count - 1) - commandIndex])
             // コマンド記憶も書き換える
             commandList[commandList.count - 1] = commandList[(commandList.count - 1) - commandIndex]
             
-            // カーソルをずらす
-            cursor[1] = cursor[1] + commandList[commandList.count - 1].count
             // カーソルを表示する
             viewCursor()
         }
@@ -398,22 +395,29 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // textview内の文字列を改行で分割する
             let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
             
-            // 最後の2行以外を改行ありで結合する
+            // 最後の行以外を改行ありで結合する
             var allText = ""
-            for i in 0..<splitArray.count - 2 {
+            for i in 0..<splitArray.count - 1 {
                 allText.append(splitArray[i] + "\n")
             }
-            // 最後から2番目の行を改行なしで結合する
-            allText.append(splitArray[splitArray.count - 2])
+            
+            // カーソル文字を付け足し，textViewに設定する
+            allText.append("_")
+            textview.text = allText
+            
+            // textviewの文字数を取得する
+            let count = getTextCount()
+            
+            // カーソル位置をずらす
+            cursor[0] = count.count
+            cursor[1] = count[cursor[0] - 1]
             
             // コマンドを書き換える
-            writePrompt(allText)
+            writePrompt()
             writeTextView(commandList[(commandList.count - 1) - commandIndex])
             // コマンド記憶も書き換える
             commandList[commandList.count - 1] = commandList[(commandList.count - 1) - commandIndex]
             
-            // カーソルをずらす
-            cursor[1] = cursor[1] + commandList[commandList.count - 1].count
             // カーソルを表示する
             viewCursor()
         }
@@ -700,7 +704,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if dataString! == "\u{04}" {
             print("End of Transmission")
             // プロンプトを書き込む
-            writePrompt(textview.text)
+            writePrompt()
             // カーソルを表示する
             viewCursor()
             
@@ -829,15 +833,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // textViewに読み込みデータを書き込む
             writeTextView(dataString!)
             
-            // カーソルをずらす
-            if dataString! == "\r" {
-                cursor[0] = cursor[0] + 1
-                cursor[1] = 1
-            }
-            else {
-                cursor[1] = cursor[1] + 1
-            }
-            
             // カーソルを表示する
             viewCursor()
         }
@@ -856,6 +851,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         var crText = splitArray[cursor[0] - 1]
         
         print("--- writeTextView ---")
+        print("string : \(string)")
         print("splitArray.count : \(splitArray.count)")
         print("get index : \(cursor[0] - 1)")
         print("crText : \(crText)\ncount : \(crText.count)")
@@ -875,6 +871,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         let allText = splitArray.joined(separator: "\n")
         
         print("allText : \(allText)")
+        
+        // カーソル位置をずらす
+        if string == "\n" || string == "\r" {
+            cursor[0] = cursor[0] + 1
+            cursor[1] = 1
+        }
+        else {
+            cursor[1] = cursor[1] + string.count
+        }
         
         // textviewに設定する
         textview.text = allText
@@ -989,45 +994,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
     }
     
-    // プロンプトを書き込む関数(カーソルはプロンプトの次に移動させ、描画はしない)
-    // string : プロンプトを書き込む文字列
-    func writePrompt(_ string: String) {
-        var getText = string
-        
-        // カーソルが最後尾にある場合
-        if curIsEnd() && getText.suffix(1) == "_" && getText.count != 0 {
-            // カーソル用文字を取り除く
-            getText = String(getText.prefix(getText.count - 1))
-        }
-        
-        // 文字列が既にあるなら改行する
-        if getText != "" {
-            getText = getText + "\n"
-        }
-        
+    // プロンプトを書き込む関数(現在のカーソル位置に書き込む)
+    func writePrompt() {
         print("--- writePrompt ---")
-        print("getText : \(getText)")
         
-        let cursorAttributes: [NSAttributedStringKey : Any] = [.backgroundColor : UIColor.gray, .foregroundColor : UIColor.white]
-        let attrText = NSMutableAttributedString(string: "_", attributes: cursorAttributes)
-        let plainText = NSMutableAttributedString(string: getText)
-        let prompt = NSMutableAttributedString(string: ">")
+        // プロンプト文字を書き込む
+        writeTextView(">")
         
-        let text = NSMutableAttributedString()
-        text.append(plainText)
-        text.append(prompt)
-        text.append(attrText)
-        
-        // textviewに設定する
-        textview.attributedText = text
-        // フォントを再設定する
-        textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
-        
-        // textview内の文字列を改行で分割する
-        let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
-        // カーソル位置をずらす
-        cursor[0] = splitArray.count
-        cursor[1] = 2
+        // カーソルを表示する
+        viewCursor()
     }
     
     // カーソルの最後尾判断をする関数
@@ -1035,11 +1010,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- curIsEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
         
+        // textviewの文字列を取得する
+        let text = getText()
         // textviewの行数、各行の文字数を取得する
         let textCount = getTextCount()
+        print("text : \(text)")
         print("textCount : \(textCount)")
-        // カーソルが最後尾を示しているならtrueを返す
-        if cursor[0] == textCount.count && cursor[1] == textCount[textCount.count - 1] {
+        // カーソルが最後尾を示しているとき
+        if cursor[0] == textCount.count && cursor[1] == textCount[textCount.count - 1] && text[cursor[0] - 1].suffix(1) == "_" {
             return true
         }
         return false
@@ -1050,14 +1028,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("curIsSentenceEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
         
+        // textviewの文字列を取得する
+        let text = getText()
         // textviewの行数、各行の文字数を取得する
         let textCount = getTextCount()
+        print("text : \(text)")
         print("textCount : \(textCount)")
-        // カーソルが文末を示しているならtrueを返す
-        if cursor[1] == textCount[cursor[0] - 1] {
+        // カーソルが文末を示しているとき
+        if cursor[1] == textCount[cursor[0] - 1] && text[cursor[0] - 1].suffix(1) == "_" {
             return true
         }
         return false
+    }
+    
+    // textviewの文字列を改行区切りの配列で返す関数
+    func getText() -> [String] {
+        // textview内の文字列を改行で分割する
+        let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+        return splitArray
     }
     
     // textviewの行数と各行の文字数を返す関数
@@ -1066,7 +1054,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         var count = [Int]()
         
         // textview内の文字列を改行で分割する
-        let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
+        let splitArray = getText()
         
         // 各行の文字数を格納する
         for i in 0..<splitArray.count {

@@ -63,13 +63,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // カーソル位置記憶変数
     var cursor = [1, 1]
-    // コマンド長記憶変数
-    var commandLength = 0
     
     // コマンド記憶変数
     var commandList = [String]()
     // コマンド一時記憶変数
     var tempCommand = ""
+    // コマンド長記憶変数
+    var commandLength = [Int]()
+    // コマンド長一時記憶変数
+    var tempCmdLength = 0
     // commandListの添字変数
     var commandIndex = 0
     
@@ -94,6 +96,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // コマンド記憶の準備
         commandList.append("")
+        // コマンド長記憶の準備
+        commandLength.append(0)
         
         // プロンプト,カーソル表示
         clearButtonTapped(UIButton())
@@ -153,18 +157,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 let splitArray = getText()
                 var txText = splitArray[splitArray.count - 1]
                 
-                // カーソル用空白文字,プロンプトを取り除く
-                if txText.count > 1 {
-                    print("curIsSentenceEnd : \(curIsSentenceEnd)")
-                    // カーソルが文末にあるとき
-                    if curIsSentenceEnd() {
-                        print("txText : \(txText)\ntxText.prefix(txText.count - 1) : \(txText.prefix(txText.count - 1))")
-                        // カーソル用空白文字の除去
-                        txText = String(txText.prefix(txText.count - 1))
-                    }
-                    // プロンプトの除去
-                    txText = String(txText.suffix(txText.count - promptLength))
-                }
+                print("commandLength : \(commandLength)")
+                print("promptLength : \(promptLength)")
+                print("before : \(txText)")
+                // コマンドだけを取り出す
+                txText = String(txText[txText.index(txText.startIndex, offsetBy: promptLength)..<txText.index(txText.startIndex, offsetBy: promptLength + commandLength[commandLength.count - 1])])
+                print("after : \(txText)")
                 
                 /* 商　quotient   余り　remainder */
                 let remainder = txText.count % maxLength
@@ -193,10 +191,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     
                 // コマンド記憶サイズを超えている場合は古い方から削除する
                 if commandList.count >= maxLength {
+                    // コマンド記憶を削除する
                     commandList.removeFirst()
+                    // コマンド長記憶を削除する
+                    commandLength.removeFirst()
                 }
                 // 次のコマンドを記憶する準備
                 commandList.append("")
+                commandLength.append(0)
+                
+                print("commandList : \(commandList)")
+                print("commandLength : \(commandLength)")
                     
                 // commandListの添字を初期化する
                 commandIndex = 0
@@ -226,6 +231,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if command.count > 0 {
                     // コマンドから一文字削除する
                     commandList[index] = String(commandList[index].prefix(command.count - 1))
+                    // コマンド長を減らす
+                    commandLength[index] = commandLength[index] - 1
                 }
                 
                 // カーソルをずらす
@@ -241,6 +248,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             // コマンドとして追記する
             commandList[commandList.count - 1].append(text)
+            // コマンド長を更新する
+            commandLength[commandLength.count - 1] = commandLength[commandLength.count - 1] + 1
             
             // カーソルをずらす
             cursor[1] = cursor[1] + text.count
@@ -280,6 +289,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // コマンド記憶の初期化
         commandList.removeAll()
         commandList.append("")
+        // コマンド長の初期化
+        commandLength.removeAll()
+        commandLength.append(0)
+        
         // コマンド添字初期化
         commandIndex = 0
         
@@ -391,6 +404,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             writeTextView(commandList[(commandList.count - 1) - commandIndex])
             // コマンド記憶も書き換える
             commandList[commandList.count - 1] = commandList[(commandList.count - 1) - commandIndex]
+            // コマンド長記憶も書き換える
+            commandLength[commandLength.count - 1] = commandLength[(commandLength.count - 1) - commandIndex]
             
             // コマンド文字数カーソルをずらす
             cursor[1] = cursor[1] + commandList[commandList.count - 1].count
@@ -440,6 +455,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             writeTextView(commandList[(commandList.count - 1) - commandIndex])
             // コマンド記憶も書き換える
             commandList[commandList.count - 1] = commandList[(commandList.count - 1) - commandIndex]
+            // コマンド長記憶も書き換える
+            commandLength[commandLength.count - 1] = commandLength[(commandLength.count - 1) - commandIndex]
             
             // コマンド文字数カーソルをずらす
             cursor[1] = cursor[1] + commandList[commandList.count - 1].count
@@ -523,17 +540,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         var splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
         // カーソルの指す行を取得する
         let crText = splitArray[cursor[0] - 1]
+        print("--- moveRight ---")
+        print("crText : \(crText)")
+        print("commandLength : \(commandLength)")
         // カーソルを移動させられるとき
-        if cursor[1] < getTextCount()[cursor[0] - 1] - promptLength || crText.suffix(1) != "_" {
+        if cursor[1] < commandLength[commandLength.count - 1] + 1 {
             // カーソル文字を追加する
-            if (cursor[1] == crText.count - promptLength && crText.suffix(1) != "_") || attr == "end" {
+            if ((cursor[1] == crText.count - promptLength && crText.suffix(1) != "_") || attr == "end") && !overWrite {
                 splitArray[cursor[0] - 1] = crText + "_"
                 // 結合した文字列をtextviewに設定する
                 textview.text = splitArray.joined(separator: "\n")
             }
             // カーソルをずらす
             if attr == "end" {
-                cursor[1] = splitArray[cursor[0] - 1].count - promptLength
+                // カーソル位置 = コマンド長 + カーソル文字
+                cursor[1] = commandLength[commandLength.count - 1] + 1
             }
             else if attr == "" {
                 cursor[1] = cursor[1] + 1

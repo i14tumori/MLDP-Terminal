@@ -155,7 +155,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
                 // 一行分の文字列を取得する
                 let splitArray = getText()
-                var txText = splitArray[splitArray.count - 1]
+                var txText = splitArray[cursor[0] - 1]
                 
                 print("commandLength : \(commandLength)")
                 print("promptLength : \(promptLength)")
@@ -377,6 +377,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // 元のコマンドを記憶する
             if commandIndex == 0 {
                 tempCommand = commandList[commandList.count - 1]
+                tempCmdLength = commandLength[commandLength.count - 1]
             }
             // 表示するコマンドを変化させる
             commandIndex = commandIndex + 1
@@ -430,6 +431,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // 元に戻ってきたら記憶した元コマンドを復旧する
             if commandIndex == 0 {
                 commandList[commandList.count - 1] = tempCommand
+                commandLength[commandLength.count - 1] = tempCmdLength
             }
             // textview内の文字列を改行で分割する
             let splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
@@ -534,8 +536,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // カーソルを右にずらす関数(カーソル表示含む)
-    // attr : ずらす量を調整する引数 (end : 行末尾にずらす)
-    func moveRight(attr: String = "") {
+    // attr   : ずらす量を調整する引数 (end : 行末尾にずらす)
+    // parent : 呼び出し元の関数名
+    func moveRight(attr: String = "", parent: String = #function) {
         // textview内の文字列を改行で分割する
         var splitArray = textview.text!.components(separatedBy: CharacterSet.newlines)
         // カーソルの指す行を取得する
@@ -543,8 +546,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- moveRight ---")
         print("crText : \(crText)")
         print("commandLength : \(commandLength)")
+        print("parent : \(parent)")
+        var limit = 0
+        // rightTapped()から呼ばれたとき
+        if parent == "rightTapped()" {
+            limit = commandLength[commandLength.count - 1] + 1
+        }
+        // peripheral(_:didUpdateValueFor:error:)から呼ばれたとき
+        else if parent == "peripheral(_:didUpdateValueFor:error:)" {
+            limit = getTextCount()[cursor[0] - 1]
+        }
+        print("limit : \(limit)")
+        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
         // カーソルを移動させられるとき
-        if cursor[1] < commandLength[commandLength.count - 1] + 1 {
+        if cursor[1] < limit || crText.suffix(1) != "_" {
             // カーソル文字を追加する
             if ((cursor[1] == crText.count - promptLength && crText.suffix(1) != "_") || attr == "end") && !overWrite {
                 splitArray[cursor[0] - 1] = crText + "_"
@@ -554,7 +569,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // カーソルをずらす
             if attr == "end" {
                 // カーソル位置 = コマンド長 + カーソル文字
-                cursor[1] = commandLength[commandLength.count - 1] + 1
+                cursor[1] = limit + 1
             }
             else if attr == "" {
                 cursor[1] = cursor[1] + 1
@@ -569,6 +584,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escUp(n: Int) {
         print("--- escUp ---")
         print("n : \(n)")
+        
     }
     
     // 下にn移動する関数
@@ -593,12 +609,47 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escDownTop(n: Int) {
         print("--- escDownTop ---")
         print("n : \(n)")
+        let count = getTextCount()
+        // 行数が足りないとき
+        if count.count - cursor[0] < n {
+            // 改行を付け加える
+            var addCR = ""
+            for _ in 0..<n - (count.count - cursor[0]) {
+                addCR.append("\n")
+            }
+            // 改行とカーソル文字を追加する
+            textview.text = textview.text! + addCR + "_"
+        }
+        // カーソルをずらす
+        cursor[0] = cursor[0] + n
+        cursor[1] = 1
+        // カーソルを表示する
+        viewCursor()
     }
     
     // n行上の先頭に移動する関数
     func escUpTop(n: Int) {
         print("--- escUpTop ---")
         print("n : \(n)")
+        var move = n
+        // 行数が足りないとき
+        if cursor[0] < move {
+            // 移動範囲を制限する
+            move = move - cursor[0]
+        }
+        print("move : \(move)")
+        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        // カーソルをずらす
+        cursor[0] = cursor[0] - move
+        cursor[1] = 1
+        var text = getText()
+        // カーソル位置に文字がないとき
+        if text[cursor[0] - 1] == "" {
+            text[cursor[0] - 1] = "_"
+            textview.text = text.joined(separator: "\n")
+        }
+        // カーソルを表示する
+        viewCursor()
     }
     
     // 現在位置と関係なく上からn、左からmの場所に移動する関数

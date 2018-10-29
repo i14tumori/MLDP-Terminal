@@ -182,8 +182,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 appDelegate.peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
                     
                 // 改行を追記する
-                if curIsEnd() {
-                    textview.text = textview.text.prefix(textview.text.count - 1) + "\n" + textview.text.suffix(1)
+                if curIsSentenceEnd() {
+                    var text = getText()
+                    // カーソルのある行を取得する
+                    let curText = text[cursor[0] - 1]
+                    // カーソル文字を削除して改行する
+                    text[cursor[0] - 1] = curText.prefix(curText.count - 1) + "\n" + curText.suffix(1)
+                    textview.text = text.joined(separator: "\n")
                 }
                 else {
                     textview.text = textview.text + "\n_"
@@ -329,7 +334,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // トースト出力関数
     // message : トーストする文字列
     func showToast(message: String) {
-        let toastLabel = UILabel(frame: CGRect(x: self.view.frame.size.width/2 - 150, y: self.view.frame.size.height/2, width: 300, height: 35))
+        let toastLabel = UILabel(frame: CGRect(x: self.view.frame.size.width/2 - 150, y: self.view.frame.size.height/4, width: 300, height: 35))
         toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
         toastLabel.textColor = UIColor.white
         toastLabel.textAlignment = .center;
@@ -609,6 +614,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escDownTop(n: Int) {
         print("--- escDownTop ---")
         print("n : \(n)")
+        // カーソル文字を削除する
+        if getCurChar() == "_" && curIsSentenceEnd() {
+            var text = getText()
+            let curText = text[cursor[0] - 1]
+            text[cursor[0] - 1] = String(curText.prefix(curText.count - 1))
+            textview.text = text.joined(separator: "\n")
+        }
         let count = getTextCount()
         // 行数が足りないとき
         if count.count - cursor[0] < n {
@@ -623,6 +635,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソルをずらす
         cursor[0] = cursor[0] + n
         cursor[1] = 1
+        var text = getText()
+        // カーソル位置に文字がないとき
+        if text[cursor[0] - 1] == "" {
+            text[cursor[0] - 1] = "_"
+            textview.text = text.joined(separator: "\n")
+        }
         // カーソルを表示する
         viewCursor()
     }
@@ -631,11 +649,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escUpTop(n: Int) {
         print("--- escUpTop ---")
         print("n : \(n)")
+        // カーソル文字を削除する
+        if getCurChar() == "_" && curIsSentenceEnd() {
+            var text = getText()
+            let curText = text[cursor[0] - 1]
+            text[cursor[0] - 1] = String(curText.prefix(curText.count - 1))
+            textview.text = text.joined(separator: "\n")
+        }
         var move = n
         // 行数が足りないとき
         if cursor[0] < move {
             // 移動範囲を制限する
-            move = move - cursor[0]
+            move = cursor[0] - 1
         }
         print("move : \(move)")
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
@@ -665,16 +690,28 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         switch central.state {
         case .poweredOff:
             print("Bluetooth電源 : OFF")
+            // Indicator表示開始
+            BusyIndicator.sharedManager.show(controller: self)
             showToast(message: "Bluetoothの電源がOFF")
         case .poweredOn:
+            // Indicator表示終了
+            BusyIndicator.sharedManager.dismiss()
             print("Bluetooth電源 : ON")
         case .resetting:
+            // Indicator表示開始
+            BusyIndicator.sharedManager.show(controller: self)
             print("レスティング状態")
         case .unauthorized:
+            // Indicator表示開始
+            BusyIndicator.sharedManager.show(controller: self)
             print("非認証状態")
         case .unknown:
+            // Indicator表示開始
+            BusyIndicator.sharedManager.show(controller: self)
             print("不明")
         case .unsupported:
+            // Indicator表示開始
+            BusyIndicator.sharedManager.show(controller: self)
             print("非対応")
         }
     }
@@ -1189,6 +1226,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return true
         }
         return false
+    }
+    
+    // カーソルの示す文字を取得する関数
+    func getCurChar() -> String {
+        print("--- getCurChar ---")
+        // カーソルの示す行を取得する
+        let curText = getText()[cursor[0] - 1]
+        return String(curText[curText.index(curText.startIndex, offsetBy: (cursor[1] + promptLength) - 1)])
     }
     
     // textviewの文字列を改行区切りの配列で返す関数

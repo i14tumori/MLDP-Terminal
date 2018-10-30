@@ -24,7 +24,29 @@ extension String {
         print("partition : \(splitText)")
         return splitText
     }
-    // 英数字の判定をする関数
+    // 文が空白文字または空文字のみの判定をする関数
+    func isNone(_ text: String) -> Bool {
+        var str = text
+        // 空文字のときfor文に入らずreturn
+        for _ in 0..<text.count {
+            // 空白以外があるときreturn
+            if str.suffix(1) != " " {
+                return false
+            }
+            // 一字減らす
+            str = String(str.prefix(str.count - 1))
+        }
+        return true
+    }
+    // 文末の空白群を削除する関数
+    func delEndSpace(_ text: String) -> String {
+        var str = text
+        while str.suffix(1) == " " {
+            str = String(str.prefix(str.count - 1))
+        }
+        return str
+    }
+    // 英数字の判定をする関数(ASCIIコードならtrueを返す)
     func isAlphanumeric(_ text: String) -> Bool {
         return text >= "\0" && text <= "~"
     }
@@ -589,35 +611,95 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escUp(n: Int) {
         print("--- escUp ---")
         print("n : \(n)")
-        
+        let column = cursor[1] - 1
+        escUpTop(n: n)
+        escRight(n: column)
     }
     
     // 下にn移動する関数
     func escDown(n: Int) {
         print("--- escDown ---")
         print("n : \(n)")
+        let column = cursor[1] - 1
+        escDownTop(n: n)
+        escRight(n: column)
     }
     
     // 右にn移動する関数
     func escRight(n: Int) {
         print("--- escRight ---")
         print("n : \(n)")
+        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        // カーソルの示す行を取得する
+        var text = getText()
+        var curText = text[cursor[0] - 1]
+        print("text : \(text)")
+        // 何もないときはカーソル文字を追加
+        if text[cursor[0] - 1] == "" {
+            text[cursor[0] - 1] = "_"
+            textview.text = text.joined(separator: "\n")
+            curText = text[cursor[0] - 1]
+        }
+        // カーソル文字を削除する
+        if getCurChar() == "_" && curIsSentenceEnd() {
+            curText = String(curText.prefix(curText.count - 1))
+        }
+        // カーソルをずらす
+        cursor[1] = cursor[1] + n
+        // 桁数が足りないとき
+        if cursor[1] > curText.count {
+            // 足りない分の空白を挿入する
+            var space = ""
+            for _ in 0..<cursor[1] - curText.count - 1 {
+                space.append(" ")
+            }
+            print("space count : \(space.count)")
+            // カーソル文字を追加する
+            text[cursor[0] - 1] = curText + space + "_"
+            // 文を結合する
+            textview.text = text.joined(separator: "\n")
+        }
+        // カーソルを表示する
+        viewCursor()
     }
     
     // 左にn移動する関数
     func escLeft(n: Int) {
         print("--- escLeft ---")
         print("n : \(n)")
+        // カーソルの示す行を取得する
+        var text = getText()
+        var curText = text[cursor[0] - 1]
+        // カーソル文字を削除する
+        if getCurChar() == "_" && curIsSentenceEnd() {
+            curText = String(curText.prefix(curText.count - 1))
+        }
+        var move = n
+        // 桁数が足りないとき
+        if cursor[1] <= move {
+            move = cursor[1] - 1
+        }
+        // カーソルをずらす
+        cursor[1] = cursor[1] - move
+        // カーソルを表示する
+        viewCursor()
+        // 文末の空白を削除する
+        curText = curText.delEndSpace(curText)
+        // 文を結合する
+        text[cursor[0] - 1] = curText
+        textview.text = text.joined(separator: "\n")
+        // カーソルを表示する
+        viewCursor()
     }
     
     // n行下の先頭に移動する関数
     func escDownTop(n: Int) {
         print("--- escDownTop ---")
         print("n : \(n)")
+        var text = getText()
+        let curText = text[cursor[0] - 1]
         // カーソル文字を削除する
         if getCurChar() == "_" && curIsSentenceEnd() {
-            var text = getText()
-            let curText = text[cursor[0] - 1]
             text[cursor[0] - 1] = String(curText.prefix(curText.count - 1))
             textview.text = text.joined(separator: "\n")
         }
@@ -632,15 +714,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // 改行とカーソル文字を追加する
             textview.text = textview.text! + addCR + "_"
         }
+        // 文末の空白群を削除する
+        text[cursor[0] - 1] = curText.delEndSpace(curText)
+        textview.text = text.joined(separator: "\n")
         // カーソルをずらす
         cursor[0] = cursor[0] + n
         cursor[1] = 1
-        var text = getText()
-        // カーソル位置に文字がないとき
-        if text[cursor[0] - 1] == "" {
-            text[cursor[0] - 1] = "_"
-            textview.text = text.joined(separator: "\n")
-        }
         // カーソルを表示する
         viewCursor()
     }
@@ -649,16 +728,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escUpTop(n: Int) {
         print("--- escUpTop ---")
         print("n : \(n)")
+        var text = getText()
         // カーソル文字を削除する
         if getCurChar() == "_" && curIsSentenceEnd() {
-            var text = getText()
             let curText = text[cursor[0] - 1]
             text[cursor[0] - 1] = String(curText.prefix(curText.count - 1))
             textview.text = text.joined(separator: "\n")
         }
         var move = n
         // 行数が足りないとき
-        if cursor[0] < move {
+        if cursor[0] <= move {
             // 移動範囲を制限する
             move = cursor[0] - 1
         }
@@ -667,12 +746,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソルをずらす
         cursor[0] = cursor[0] - move
         cursor[1] = 1
-        var text = getText()
         // カーソル位置に文字がないとき
         if text[cursor[0] - 1] == "" {
             text[cursor[0] - 1] = "_"
             textview.text = text.joined(separator: "\n")
         }
+        // 空白行と空行を削除する
+        for _ in 0..<text.count {
+            // 空白でも空文字でもないとき
+            if !text[text.count - 1].isNone(text[text.count - 1]) {
+                break
+            }
+            // 最後の行を削除する
+            text.removeLast()
+        }
+        textview.text = text.joined(separator: "\n")
         // カーソルを表示する
         viewCursor()
     }
@@ -733,6 +821,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // ペリフェラルとの切断が完了すると呼ばれる
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         print("disconnect complete")
+        // トーストを出力する
+        showToast(message: "切断完了")
         // データを初期化する
         appDelegate.isScanning = false
         appDelegate.centralManager = CBCentralManager()
@@ -852,7 +942,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             escSeq = 0
         }
         // エスケープシーケンスのとき
-        else if escSeq > 0{
+        else if escSeq > 0 {
             switch escSeq {
             // シーケンス一文字目
             case 1:
@@ -938,8 +1028,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             default: break
             }
         }
-        // エスケープのとき　(テスト用に # で動作する)
-        else if dataString! == "\u{1b}" || dataString! == "#" {
+        // エスケープのとき
+        else if dataString! == "\u{1b}" {
             escSeq = 1
         }
             
@@ -962,6 +1052,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // Ctrl+f(カーソルを一文字右に移動)のとき
         else if dataString! == "\u{06}" {
             moveRight()
+        }
+            
+        // 完全デバッグ用出力
+        else if dataString! == "@" {
+            print(getText())
+            print(getTextCount())
         }
             
         /* デバッグ用のカーソル移動 ここまで */
@@ -1006,14 +1102,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("get index : \(cursor[0] - 1)")
         print("crText : \(crText)\ncount : \(crText.count)")
         print("promptLength : \(promptLength)")
-        /*
-        // カーソル前の文字列
-        let preStr = String(crText.prefix((cursor[1] + promptLength) - 1))
-        print("preStr : \(preStr)")
-        // カーソル後の文字列
-        let aftStr = String(crText.suffix((crText.count - (cursor[1] + promptLength)) + 1))
-        print("aftStr : \(aftStr)")
-        */
         // カーソル前の文字列
         let preStr = String(crText.prefix((cursor[1] + promptLength) - 1))
         print("preStr : \(preStr)")
@@ -1211,7 +1299,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // カーソルの文末判断をする関数
     func curIsSentenceEnd() -> Bool {
-        print("curIsSentenceEnd ---")
+        print("--- curIsSentenceEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
         print("real cursorPlace : [ \(cursor[0]) , \(cursor[1] + promptLength) ]")
         
@@ -1231,8 +1319,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // カーソルの示す文字を取得する関数
     func getCurChar() -> String {
         print("--- getCurChar ---")
+        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        print("promptLength : \(promptLength)")
         // カーソルの示す行を取得する
         let curText = getText()[cursor[0] - 1]
+        print("curText : \(curText)")
+        print("offset : \((cursor[1] + promptLength) - 1)")
         return String(curText[curText.index(curText.startIndex, offsetBy: (cursor[1] + promptLength) - 1)])
     }
     

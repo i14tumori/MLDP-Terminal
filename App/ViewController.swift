@@ -186,9 +186,29 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 print("commandLength : \(commandLength)")
                 print("promptLength : \(promptLength)")
                 print("before : \(txText)")
+                
                 // コマンドだけを取り出す
                 txText = String(txText[txText.index(txText.startIndex, offsetBy: promptLength)..<txText.index(txText.startIndex, offsetBy: promptLength + commandLength[commandLength.count - 1])])
                 print("after : \(txText)")
+                
+                if txText == "" {
+                    var text = getText()
+                    // カーソルのある行を取得する
+                    let curText = text[cursor[0] - 1]
+                    // カーソル文字を削除して改行する
+                    text[cursor[0] - 1] = curText.prefix(curText.count - 1) + "\n" + curText.suffix(1)
+                    textview.text = text.joined(separator: "\n")
+                    // カーソルをずらす
+                    cursor[0] = cursor[0] + 1
+                    cursor[1] = 1
+                    // プロンプトの長さを初期化
+                    promptLength = 0
+                    // プロンプトを書き込む
+                    writePrompt()
+                    // iPhoneの書き込みを許可する
+                    viewEditFlag = 0
+                    return false
+                }
                 
                 /* 商　quotient   余り　remainder */
                 let remainder = txText.count % maxLength
@@ -678,6 +698,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if getCurChar() == "_" && curIsSentenceEnd() {
             curText = String(curText.prefix(curText.count - 1))
         }
+        print("curText : \(curText)")
         var move = n
         // 桁数が足りないとき
         if cursor[1] <= move {
@@ -685,7 +706,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // カーソルをずらす
         cursor[1] = cursor[1] - move
-        // 空白ならカーソル文字にする
+        // 空白か空文字ならカーソル文字にする
         if getCurChar() == " " {
             // カーソル前の文字列
             let preStr = String(curText.prefix((cursor[1] + promptLength) - 1))
@@ -694,12 +715,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // 結合する
             curText = preStr + "_" + aftStr
         }
-        // カーソルを表示する
-        viewCursor()
+        else if getCurChar() == "" {
+            curText = "_"
+        }
         // 文末の空白を削除する
         curText = curText.delEndSpace(curText)
+        print("curText : \(curText)")
         // 文を結合する
         text[cursor[0] - 1] = curText
+        print("text : \(text)")
         textview.text = text.joined(separator: "\n")
         // カーソルを表示する
         viewCursor()
@@ -746,7 +770,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if getCurChar() == "_" && curIsSentenceEnd() {
             let curText = text[cursor[0] - 1]
             text[cursor[0] - 1] = String(curText.prefix(curText.count - 1))
-            textview.text = text.joined(separator: "\n")
         }
         var move = n
         // 行数が足りないとき
@@ -762,7 +785,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソル位置に文字がないとき
         if text[cursor[0] - 1] == "" {
             text[cursor[0] - 1] = "_"
-            textview.text = text.joined(separator: "\n")
         }
         // 空白行と空行を削除する
         for _ in 0..<text.count {
@@ -782,6 +804,29 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escRoot(n: Int, m: Int) {
         print("--- escRoot ---")
         print("n : \(n), m : \(m)")
+        var text = getText()
+        // カーソル文字を削除する
+        if getCurChar() == "_" && curIsSentenceEnd() {
+            let curText = text[cursor[0] - 1]
+            text[cursor[0] - 1] = String(curText.prefix(curText.count - 1))
+        }
+        // カーソルを上に移動させるとき
+        if cursor[0] > n {
+            // cursor[0] - n上の先頭に移動する
+            escUpTop(n: cursor[0] - n)
+        }
+        // カーソルを下に移動させるとき
+        else if cursor[0] < n {
+            // cursor[0] - n下の先頭に移動する
+            escDownTop(n: cursor[0] - n)
+        }
+        // 同じ行内で移動させるとき
+        else if cursor[0] == n {
+            // cursorを先頭に移動する
+            escLeft(n: cursor[1] - 1)
+        }
+        // 左からmの位置に移動する
+        escRight(n: m - 1)
     }
     
     /* Central関連メソッド */
@@ -1075,6 +1120,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             
         /* デバッグ用のカーソル移動 ここまで */
             
+        // BS(後退)のとき
+        else if dataString! == "\u{08}" {
+            
+        }
         // それ以外のとき
         else {
             // textViewに読み込みデータを書き込む

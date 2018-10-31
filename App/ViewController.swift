@@ -13,6 +13,7 @@ import CoreBluetooth
 extension String {
     // String型を一文字ずつの配列に分解する関数
     func partition(_ text: String) -> [String] {
+        print("--- partition ---")
         let count = text.count
         var origin = text
         var splitText = [String]()
@@ -20,12 +21,12 @@ extension String {
             splitText.append(String(origin.prefix(1)))
             origin = String(origin.suffix(origin.count - 1))
         }
-        print("--- partition ---")
         print("partition : \(splitText)")
         return splitText
     }
     // 文が空白文字または空文字のみの判定をする関数
     func isNone(_ text: String) -> Bool {
+        print("--- isNone ---")
         var str = text
         // 空文字のときfor文に入らずreturn
         for _ in 0..<text.count {
@@ -40,6 +41,7 @@ extension String {
     }
     // 文末の空白群を削除する関数
     func delEndSpace(_ text: String) -> String {
+        print("--- delEndSpace ---")
         var str = text
         while str.suffix(1) == " " {
             str = String(str.prefix(str.count - 1))
@@ -48,10 +50,12 @@ extension String {
     }
     // 英数字の判定をする関数(ASCIIコードならtrueを返す)
     func isAlphanumeric(_ text: String) -> Bool {
+        print("--- isAlphanumeric ---")
         return text >= "\0" && text <= "~"
     }
     // 数字の判定をする関数
     func isNumeric(_ text: String) -> Bool {
+        print("--- isNumeric ---")
         let partText = text.partition(text)
         for i in 0..<text.count {
             if partText[i] < "0" || partText[i] > "9" {
@@ -149,7 +153,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // タッチ開始時のタッチイベント
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        print("touches began")
+        print("--- touches began ---")
         // キーボードを閉じる
         self.view.endEditing(true)
     }
@@ -295,7 +299,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // clearButtonが押されたとき
     // textViewをクリアする
     @IBAction func clearButtonTapped(_ sender: UIButton) {
-        print("clear button tapped")
+        print("--- clear button tapped ---")
         
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
@@ -330,12 +334,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // scanButtonが押されたとき
     // ペリフェラルスキャンを開始する
     @IBAction func scanButtonTapped(_ sender: UIButton) {
-        print("scan button tapped")
+        print("--- scan button tapped ---")
     }
     
     // disconButtonが押されたとき
     @IBAction func disconButtonTapped(_ sender: UIButton) {
-        print("disconnect button tapped")
+        print("--- disconnect button tapped ---")
         if appDelegate.outputCharacteristic == nil {
             print("\(appDelegate.peripheralDeviceName) is not ready")
             showToast(message: "デバイス未接続")
@@ -349,7 +353,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // deleteButtonが押されたとき
     // 記憶デバイスを消去する
     @IBAction func deleteButtonTapped(_ sender: UIButton) {
-        print("deviceDelete button tapped")
+        print("--- deviceDelete button tapped ---")
         UserDefaults.standard.removeObject(forKey: "DeviceName")
     }
     
@@ -681,6 +685,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // カーソルをずらす
         cursor[1] = cursor[1] - move
+        // 空白ならカーソル文字にする
+        if getCurChar() == " " {
+            // カーソル前の文字列
+            let preStr = String(curText.prefix((cursor[1] + promptLength) - 1))
+            // カーソル後の文字列
+            let aftStr = String(curText.suffix((curText.count - (cursor[1] + promptLength)) + 1))
+            // 結合する
+            curText = preStr + "_" + aftStr
+        }
         // カーソルを表示する
         viewCursor()
         // 文末の空白を削除する
@@ -697,22 +710,22 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- escDownTop ---")
         print("n : \(n)")
         var text = getText()
-        let curText = text[cursor[0] - 1]
+        var curText = text[cursor[0] - 1]
         // カーソル文字を削除する
         if getCurChar() == "_" && curIsSentenceEnd() {
-            text[cursor[0] - 1] = String(curText.prefix(curText.count - 1))
-            textview.text = text.joined(separator: "\n")
+            curText = String(curText.prefix(curText.count - 1))
         }
         let count = getTextCount()
+        print("count.count : \(count.count)\ncursor[0] : \(cursor[0])")
+        print("count.count - cursor[0] : \(count.count - cursor[0])")
         // 行数が足りないとき
         if count.count - cursor[0] < n {
             // 改行を付け加える
-            var addCR = ""
             for _ in 0..<n - (count.count - cursor[0]) {
-                addCR.append("\n")
+                text.append("")
             }
             // 改行とカーソル文字を追加する
-            textview.text = textview.text! + addCR + "_"
+            text[text.count - 1] = text[text.count - 1] + "_"
         }
         // 文末の空白群を削除する
         text[cursor[0] - 1] = curText.delEndSpace(curText)

@@ -130,8 +130,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // テキストのフォント設定
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
-        print("--- viewDidLoad ---\nfont : \(String(describing: textview.font))")
-        print("pointSize : \(textview.font!.pointSize)")
         
         // インスタンスの生成および初期化
         appDelegate.centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
@@ -556,22 +554,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 cursor[1] = cursor[1] - 1
             }
             viewCursor()
-        }
-    }
-    
-    // ??? 呼ばれない
-    @objc func leftPress(gesture: UILongPressGestureRecognizer) {
-        print("--- leftPress ---")
-        if gesture.state == .began {
-            timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { (_) in
-                guard let _ = self.timer else {
-                    return
-                }
-                // 呼び出し
-            }
-        }
-        if gesture.state == .ended {
-            timer?.invalidate()
         }
     }
     
@@ -1202,8 +1184,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
-        print("--- writeTextView ---\nfont : \(String(describing: textview.font))")
-        print("pointSize : \(textview.font!.pointSize)")
         
         // 画面をスクロールする
         scrollToButtom()
@@ -1243,8 +1223,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
-        print("--- deleteTextView ---\nfont : \(String(describing: textview.font))")
-        print("pointSize : \(textview.font!.pointSize)")
     }
     
     // カーソルを表示する関数
@@ -1315,8 +1293,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.attributedText = allText
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
-        print("--- viewCursor ---\nfont : \(String(describing: textview.font))")
-        print("pointSize : \(textview.font!.pointSize)")
     }
     
     // プロンプトを書き込む関数(現在のカーソル位置に書き込み，プロンプトの長さを更新する)

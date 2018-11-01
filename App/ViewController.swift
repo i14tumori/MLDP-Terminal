@@ -51,7 +51,7 @@ extension String {
     // 英数字の判定をする関数(ASCIIコードならtrueを返す)
     func isAlphanumeric(_ text: String) -> Bool {
         print("--- isAlphanumeric ---")
-        return text >= "\0" && text <= "~"
+        return text >= "\u{00}" && text <= "\u{7f}"
     }
     // 数字の判定をする関数
     func isNumeric(_ text: String) -> Bool {
@@ -793,19 +793,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             text[cursor[0] - 1] = String(curText.prefix(curText.count - 1))
         }
         // カーソルを上に移動させるとき
-        if cursor[0] > n {
+        if cursor[0] >= n {
             // cursor[0] - n上の先頭に移動する
             escUpTop(n: cursor[0] - n)
         }
         // カーソルを下に移動させるとき
-        else if cursor[0] < n {
-            // cursor[0] - n下の先頭に移動する
-            escDownTop(n: cursor[0] - n)
-        }
-        // 同じ行内で移動させるとき
-        else if cursor[0] == n {
-            // cursorを先頭に移動する
-            escLeft(n: cursor[1] - 1)
+        else {
+            // n - cursor[0]下の先頭に移動する
+            escDownTop(n: n - cursor[0])
         }
         // 左からmの位置に移動する
         escRight(n: m - 1)
@@ -963,8 +958,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         print("dataString:\(String(describing: dataString))")
         
+        // \0(NULL)のとき
+        if dataString! == "\0" {
+            return
+        }
         // Ctrl+d(EOT : 転送終了)のとき
-        if dataString! == "\u{04}" {
+        else if dataString! == "\u{04}" {
             print("End of Transmission")
             
             // プロンプトの長さを更新

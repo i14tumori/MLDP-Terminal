@@ -1093,12 +1093,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             moveRight()
         }
             
-        // 完全デバッグ用出力
-        else if dataString! == "@" {
-            print(getText())
-            print(getTextCount())
-        }
-            
         /* デバッグ用のカーソル移動 ここまで */
             
         // BS(後退)のとき
@@ -1120,7 +1114,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             else {
                 cursor[1] = cursor[1] + dataString!.count
             }
-                
+            
             // カーソルを表示する
             viewCursor()
         }

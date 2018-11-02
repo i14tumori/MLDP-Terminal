@@ -139,19 +139,22 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return false
         }
         
-        var input = text
+        print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
+        print("allText : \(allText)")
+        
+        let input = text
         // ペリフェラルにデータを書き込む
         appDelegate.peripheral.writeValue(text.data(using: .utf8)!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
         
-        // 改行なら行を記憶してカーソル文字を追加
+        // 改行なら次の行を準備する
         if input == "\n" {
-            // カーソル文字を追加
-            input = input + "_"
+            // 次のテキスト記憶を準備
+            allText.append("")
         }
         // 文字ならテキストとして記憶する
         else {
             // カーソルの示す行(普通は最終行になるはず)に記憶する
-            allText[cursor[1] - 1] += input
+            allText[cursor[0] - 1] += input
         }
         // textviewにデータを書き込む
         writeTextView(input)
@@ -185,11 +188,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.text = "_"
         // テキストの記憶を初期化する
         allText.removeAll()
+        allText.append("")
         
         // カーソル位置を初期化する
         cursor = [1, 1]
         // カーソル表示
-        writePrompt()
+        viewCursor()
     }
     
     // scanButtonが押されたとき
@@ -786,25 +790,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("get index : \(cursor[0] - 1)")
         print("crText : \(crText)\ncount : \(crText.count)")
         // カーソル前の文字列
-        let preStr = String(crText.prefix((cursor[1] + promptLength) - 1))
+        let preStr = String(crText.prefix(cursor[1] - 1))
         print("preStr : \(preStr)")
         // カーソル後の文字列
-        var aftStr: String
-        // 上書きのとき(カーソルが示す文字を含まない)
-        if overWrite {
-            aftStr = String(crText.suffix(crText.count - (cursor[1] + promptLength)))
-            // 最後まで上書きされた場合
-            if aftStr == "" {
-                // カーソルを追加
-                aftStr = "_"
-                // 追記に変更する
-                overWrite = false
-            }
-        }
-        // 追記のとき(カーソルが示す文字を含む)
-        else {
-            aftStr = String(crText.suffix((crText.count - (cursor[1] + promptLength)) + 1))
-        }
+        let aftStr = String(crText.suffix((crText.count - cursor[1]) + 1))
         print("aftStr : \(aftStr)")
         
         // カーソル行の完成
@@ -854,9 +843,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("crText : \(crText)\ncount : \(crText.count)")
         
         // カーソル前の文字列 - カーソル文字
-        let preStr = String(crText.prefix((cursor[1] + promptLength) - 2))
+        let preStr = String(crText.prefix(cursor[1] - 2))
         // カーソル後の文字列
-        let aftStr = String(crText.suffix((crText.count - (cursor[1] + promptLength)) + 1))
+        let aftStr = String(crText.suffix((crText.count - cursor[1]) + 1))
         
         // 削除後の文の完成
         crText = preStr + aftStr
@@ -886,7 +875,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         print("--- viewCursor ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
-        print("real cursorPlace : [ \(cursor[0]) , \(cursor[1] + promptLength) ]")
         print("splitArray.count : \(splitArray.count)")
         print("get index : \(cursor[0] - 1)")
         
@@ -897,14 +885,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         let columnCount = getTextCount().count
     
         print("crText : \(crText)\ncount : \(crText.count)")
-        print("promptLength : \(promptLength)")
         
         // カーソル前の文字列
-        let preChar = String(crText.prefix((cursor[1] + promptLength) - 1))
+        let preChar = String(crText.prefix(cursor[1] - 1))
         // カーソル文字
-        let curChar = String(crText.prefix(cursor[1] + promptLength).suffix(1))
+        let curChar = String(crText.prefix(cursor[1]).suffix(1))
         // カーソル後の文字列
-        let aftChar = String(crText.suffix(crText.count - (cursor[1] + promptLength)))
+        let aftChar = String(crText.suffix(crText.count - cursor[1]))
         
         let preString = NSMutableAttributedString(string: preChar, attributes: stringAttributes)
         let cursorString = NSMutableAttributedString(string: curChar, attributes: cursorAttributes)
@@ -946,32 +933,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
     }
     
-    // プロンプトを書き込む関数(現在のカーソル位置に書き込み，プロンプトの長さを更新する)
-    func writePrompt() {
-        print("--- writePrompt ---")
-        
-        // カーソルが文末を示しているとき
-        if curIsSentenceEnd() {
-            overWrite = false
-        }
-        // カーソルが文途中を示しているとき
-        else {
-            overWrite = true
-        }
-        
-        // プロンプト文字を書き込む
-        writeTextView(promptStr)
-        promptLength = promptLength + promptStr.count
-        
-        // カーソルを表示する
-        viewCursor()
-    }
-    
     // カーソルの最後尾判断をする関数
     func curIsEnd() -> Bool {
         print("--- curIsEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
-        print("real cursorPlace : [ \(cursor[0]) , \(cursor[1] + promptLength) ]")
         
         // textviewの文字列を取得する
         let text = getText()
@@ -980,7 +945,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("text : \(text)")
         print("textCount : \(textCount)")
         // カーソルが最後尾を示しているとき
-        if cursor[0] == textCount.count && cursor[1] + promptLength == textCount[textCount.count - 1] && text[cursor[0] - 1].suffix(1) == "_" {
+        if cursor[0] == textCount.count && cursor[1] == textCount[textCount.count - 1] && text[cursor[0] - 1].suffix(1) == "_" {
             return true
         }
         return false
@@ -990,7 +955,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func curIsSentenceEnd() -> Bool {
         print("--- curIsSentenceEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
-        print("real cursorPlace : [ \(cursor[0]) , \(cursor[1] + promptLength) ]")
         
         // textviewの文字列を取得する
         let text = getText()
@@ -999,7 +963,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("text : \(text)")
         print("textCount : \(textCount)")
         // カーソルが文末を示しているとき
-        if cursor[1] + promptLength == textCount[cursor[0] - 1] && text[cursor[0] - 1].suffix(1) == "_" {
+        if cursor[1] == textCount[cursor[0] - 1] && text[cursor[0] - 1].suffix(1) == "_" {
             return true
         }
         return false
@@ -1009,12 +973,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func getCurChar() -> String {
         print("--- getCurChar ---")
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
-        print("promptLength : \(promptLength)")
         // カーソルの示す行を取得する
         let curText = getText()[cursor[0] - 1]
         print("curText : \(curText)")
-        print("offset : \((cursor[1] + promptLength) - 1)")
-        return String(curText[curText.index(curText.startIndex, offsetBy: (cursor[1] + promptLength) - 1)])
+        return String(curText[curText.index(curText.startIndex, offsetBy: cursor[1] - 1)])
     }
     
     // textviewの文字列を改行区切りの配列で返す関数

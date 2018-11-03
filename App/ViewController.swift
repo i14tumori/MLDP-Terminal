@@ -887,15 +887,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func curIsEnd() -> Bool {
         print("--- curIsEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
+        print("allText : \(allText)")
         
-        // textviewの文字列を取得する
-        let text = getText()
-        // textviewの行数、各行の文字数を取得する
-        let textCount = getTextCount()
-        print("text : \(text)")
-        print("textCount : \(textCount)")
         // カーソルが最後尾を示しているとき
-        if cursor[0] == textCount.count && cursor[1] == textCount[textCount.count - 1] && text[cursor[0] - 1].suffix(1) == "_" {
+        if curIsSentenceEnd() && cursor[0] == allText.count {
             return true
         }
         return false
@@ -905,15 +900,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func curIsSentenceEnd() -> Bool {
         print("--- curIsSentenceEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
+        print("allText : \(allText)")
         
-        // textviewの文字列を取得する
-        let text = getText()
-        // textviewの行数、各行の文字数を取得する
-        let textCount = getTextCount()
-        print("text : \(text)")
-        print("textCount : \(textCount)")
         // カーソルが文末を示しているとき
-        if cursor[1] == textCount[cursor[0] - 1] && text[cursor[0] - 1].suffix(1) == "_" {
+        if cursor[1] == allText[cursor[0] - 1].count && allText[cursor[0] - 1][cursor[1] - 1] == "_" {
             return true
         }
         return false
@@ -924,7 +914,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- getCurChar ---")
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
         // カーソルの示す行を取得する
-        let curText = getText()[cursor[0] - 1]
+        let curText = allText[cursor[0] - 1]
         print("curText : \(curText)")
         return String(curText[curText.index(curText.startIndex, offsetBy: cursor[1] - 1)])
     }

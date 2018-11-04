@@ -519,6 +519,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     /* Central関連メソッド */
     
+    // commit用変更コメント (意味なし)
+    
     // centralManagerの状態が変化すると呼ばれる
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {

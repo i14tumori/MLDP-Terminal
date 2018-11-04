@@ -319,6 +319,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- escRight ---")
         print("n : \(n)")
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        // 移動がないとき(n = 0)
+        if n == 0 {
+            return
+        }
         // 何もないときはカーソル文字を追加
         if getCurrChar() == "" {
             allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor))
@@ -338,7 +342,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if cursor[1] > allTextAttr[cursor[0] - 1].count {
             print("column isn't enough")
             print("add spaceCount : \(cursor[1] - allTextAttr[cursor[0] - 1].count - 1)")
-            // 足りない分の空白を挿入する
+            // 足りない空白を追加する
             for _ in 0..<cursor[1] - allTextAttr[cursor[0] - 1].count - 1 {
                 allTextAttr[cursor[0] - 1].append(textAttr(char: " ", color: currColor))
             }
@@ -355,6 +359,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escLeft(n: Int) {
         print("--- escLeft ---")
         print("n : \(n)")
+        // 移動がないとき(n = 0)
+        if n == 0 {
+            return
+        }
         // カーソル文字を削除する
         if curIsSentenceEnd() {
             print("remove last")
@@ -954,6 +962,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("second row : \(row)")
         while row > cursor[0] - 1 {
             if refreshText[row].count != 0 {
+                print("break")
                 break
             }
             row -= 1

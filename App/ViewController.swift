@@ -9,6 +9,9 @@
 import UIKit
 import CoreBluetooth
 
+
+// 失敗した
+
 // String型の拡張メソッド
 extension String {
     // String型を一文字ずつの配列に分解する関数

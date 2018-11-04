@@ -5,19 +5,12 @@
 //  Created by 津森智己 on 2018/08/08.
 //  Copyright © 2018年 津森智己. All rights reserved.
 //
-
 import UIKit
 import CoreBluetooth
-
-
-// 失敗した
-// 失敗
 
 // String型の拡張メソッド
 extension String {
     // String型を一文字ずつの配列に分解する関数
-    // text : 分解する文字列
-    //  返り値 : 分解された文字列
     func partition(_ text: String) -> [String] {
         print("--- partition ---")
         let count = text.count
@@ -31,8 +24,6 @@ extension String {
         return splitText
     }
     // 文が空白文字または空文字のみの判定をする関数
-    // text : 判定する文字列
-    // 返り値 : 判定結果
     func isNone(_ text: String) -> Bool {
         print("--- isNone ---")
         var str = text
@@ -48,27 +39,24 @@ extension String {
         return true
     }
     // 文末の空白群を削除する関数
-    // text : 文末の空白群を削除する文字列 (参照渡し)
-    // 返り値 : 削除した空白数
-    func delEndSpace(text: inout String) -> Int {
+    // text : 対象文字列
+    // limit : 削除する文字数の制限
+    func delEndSpace(_ text: String, _ limit: Int = 0) -> String {
         print("--- delEndSpace ---")
-        var count = 0
-        while text.suffix(1) == " " {
-            text = String(text.prefix(text.count - 1))
-            count += 1
+        var str = text
+        var count = text.count
+        while str.suffix(1) == " " && count > limit {
+            str = String(str.prefix(str.count - 1))
+            count -= 1
         }
-        return count
+        return str
     }
-    // 英数字の判定をする関数(ASCIIコードならtrue)
-    // text : 判定する文字列
-    //  返り値 : 判定結果
+    // 英数字の判定をする関数(ASCIIコードならtrueを返す)
     func isAlphanumeric(_ text: String) -> Bool {
         print("--- isAlphanumeric ---")
         return text >= "\u{00}" && text <= "\u{7f}"
     }
     // 数字の判定をする関数
-    // text : 判定する文字列
-    //  返り値 : 判定結果
     func isNumeric(_ text: String) -> Bool {
         print("--- isNumeric ---")
         let partText = text.partition(text)
@@ -78,6 +66,16 @@ extension String {
             }
         }
         return true
+    }
+}
+
+struct textAttr {
+    var char: String
+    var color: UIColor
+    
+    init(char: String, color: UIColor) {
+        self.char = char
+        self.color = color
     }
 }
 
@@ -93,10 +91,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // カーソル位置記憶変数
     var cursor = [1, 1]
     
-    // テキスト記憶変数
-    var allText = [[String]]()
-    // テキストカラー記憶変数
-    var allTextColor = [[UIColor]]()
+    // テキスト保存変数
+    var allTextAttr = [[textAttr]]()
     
     // 色の一時記憶変数
     var currColor: UIColor = UIColor.black
@@ -116,7 +112,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // textviewのフォントサイズを設定する
         textview.font = UIFont.systemFont(ofSize: 12.00)
- 
+        
         // textviewのデリゲートをセット
         textview.delegate = self
         
@@ -133,12 +129,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("centralManagerDelegate set")
         appDelegate.centralManager.delegate = self
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
+    
     /* Bluetooth以外関連メソッド */
     
     // タッチ開始時のタッチイベント
@@ -158,9 +154,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             showToast(message: "デバイス未接続")
             return false
         }
-        
-        print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
-        print("allText : \(allText)")
         
         var input = text
         // iPnoneのdelキーのとき
@@ -206,13 +199,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 色を初期化する
         currColor = UIColor.black
         // テキストの記憶を初期化する
-        allText = [[]]
-        allText[0].append("_")
-        allTextColor = [[]]
-        allTextColor[0].append(currColor)
-        
-        print("allText : \(allText)")
-        print("allTextColor : \(allTextColor)")
+        allTextAttr = [[textAttr(char: "_", color: currColor)]]
         
         // カーソル位置を初期化する
         cursor = [1, 1]
@@ -332,7 +319,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     /* エスケープシーケンスメソッド */
-    
+
     // 上にn移動する関数
     func escUp(n: Int) {
         print("--- escUp ---")
@@ -356,46 +343,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- escRight ---")
         print("n : \(n)")
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
-        // カーソルの示す行を取得する
-        var text = getText()
-        var curText = text[cursor[0] - 1]
-        // テキストカラーを取得する
-        var color = getTextColor()
-        print("text : \(text)")
         // 何もないときはカーソル文字を追加
         if getCurrChar() == "" {
-            // 文字を追加
-            text[cursor[0] - 1] = "_"
-            curText = text[cursor[0] - 1]
-            // テキストカラーを追加
-            color[cursor[0] - 1] = [UIColor.black]
+            allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor))
         }
         // カーソル文字を削除する
-        if getCurrChar() == "_" && curIsSentenceEnd() {
-            curText = String(curText.prefix(curText.count - 1))
-            text[cursor[0] - 1] = curText
-            color[cursor[0] - 1].removeLast()
+        if curIsSentenceEnd() {
+            allTextAttr[cursor[0] - 1].removeLast()
         }
         // カーソルをずらす
         cursor[1] = cursor[1] + n
         // 桁数が足りないとき
-        if cursor[1] > curText.count {
+        if cursor[1] > allTextAttr[cursor[0] - 1].count {
             // 足りない分の空白を挿入する
-            var space = ""
-            var addColor = [UIColor]()
-            for _ in 0..<cursor[1] - curText.count - 1 {
-                space.append(" ")
-                addColor.append(UIColor.white)
+            for _ in 0..<cursor[1] - allTextAttr[cursor[0] - 1].count - 1 {
+                allTextAttr[cursor[0] - 1].append(textAttr(char: " ", color: currColor))
             }
-            print("space count : \(space.count)")
             // カーソル文字を追加する
-            text[cursor[0] - 1] = curText + space + "_"
-            addColor.append(UIColor.white)
-            // 文を結合する
-            setText(text)
-            // テキストカラーを反映する
-            color[cursor[0] - 1] = color[cursor[0] - 1] + addColor
-            setTextColor(color)
+            allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor))
         }
         // カーソルを表示する
         viewCursor()
@@ -405,18 +370,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escLeft(n: Int) {
         print("--- escLeft ---")
         print("n : \(n)")
-        // カーソルの示す行を取得する
-        var text = getText()
-        var curText = text[cursor[0] - 1]
-        // テキストカラーを取得する
-        var color = getTextColor()
         // カーソル文字を削除する
-        if getCurrChar() == "_" && curIsSentenceEnd() {
-            curText = String(curText.prefix(curText.count - 1))
-            text[cursor[0] - 1] = curText
-            color[cursor[0] - 1].removeLast()
+        if curIsSentenceEnd() {
+            allTextAttr[cursor[0] - 1].removeLast()
         }
-        print("curText : \(curText)")
         var move = n
         // 桁数が足りないとき
         if cursor[1] <= move {
@@ -424,34 +381,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // カーソルをずらす
         cursor[1] = cursor[1] - move
-        // 空白か空文字ならカーソル文字にする
-        if getCurrChar() == " " {
-            // カーソル前の文字列
-            let preStr = String(curText.prefix(cursor[1] - 1))
-            // カーソル前のテキストカラー
-            let preColor = color[cursor[0] - 1].prefix(cursor[1] - 1)
-            // 結合する
-            curText = preStr + "_"
-            // 文字を追加
-            text[cursor[0] - 1] = curText
-            // テキストカラーを追加
-//            color[cursor[0] - 1] = preColor
+        // 空文字ならカーソル文字にする
+        if getCurrChar() == "" {
+            allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor))
         }
-        else if getCurrChar() == "" {
-            curText = "_"
-        }
-        // 文末の空白を削除する
-        let delCount = curText.delEndSpace(text: &curText)
-        print("curText : \(curText)")
-        // 削除した空白のテキストカラーを削除する
-        let tempColor = allTextColor[cursor[0] - 1]
-        allTextColor[cursor[0] - 1] = []
-        for i in 0..<delCount {
-            allTextColor[cursor[0] - 1].append(tempColor[i])
-        }
-        // 文を結合する
-        setText(text)
-        
+        // カーソルの示す行を取得する
+        var curText = allTextAttr[cursor[0] - 1]
+        // カーソル後の空白を削除する
+        curText = delSpace(curText)
+        // allTextAttrに設定する
+        allTextAttr[cursor[0] - 1] = curText
         // カーソルを表示する
         viewCursor()
     }
@@ -460,38 +399,25 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escDownTop(n: Int) {
         print("--- escDownTop ---")
         print("n : \(n)")
-        var text = getText()
-        var curText = text[cursor[0] - 1]
         // カーソル文字を削除する
-        if getCurrChar() == "_" && curIsSentenceEnd() {
-            curText = String(curText.prefix(curText.count - 1))
+        if curIsSentenceEnd() {
+            allTextAttr[cursor[0] - 1].removeLast()
         }
-        let count = getTextCount()
-        print("count.count : \(count.count)\ncursor[0] : \(cursor[0])")
-        print("count.count - cursor[0] : \(count.count - cursor[0])")
         // 行数が足りないとき
-        if count.count - cursor[0] < n {
+        if allTextAttr.count - cursor[0] < n {
             // 改行を付け加える
-            for _ in 0..<n - (count.count - cursor[0]) {
-                allText.insert([""], at: cursor[0])
-                allTextColor.insert([currColor], at: cursor[0])
+            for _ in 0..<n - (allTextAttr.count - cursor[0]) {
+                allTextAttr.append([textAttr(char: "", color: currColor)])
             }
             // 改行とカーソル文字を追加する
-            text[text.count - 1] = text[text.count - 1] + "_"
+            allTextAttr.append([textAttr(char: "_", color: currColor)])
         }
-        // 文末の空白を削除する
-        let delCount = curText.delEndSpace(text: &curText)
-        print("curText : \(curText)")
-        // 削除した空白のテキストカラーを削除する
-        let tempColor = allTextColor[cursor[0] - 1]
-        allTextColor[cursor[0] - 1] = []
-        for i in 0..<delCount {
-            allTextColor[cursor[0] - 1].append(tempColor[i])
-        }
-        // 文を結合する
-        for i in 0..<text.count {
-            allText[i] = text[i].partition(text[i])
-        }
+        // カーソルの示す行を取得する
+        var curText = allTextAttr[cursor[0] - 1]
+        // カーソル後の空白を削除する
+        curText = delSpace(curText)
+        // allTextAttrに設定する
+        allTextAttr[cursor[0] - 1] = curText
         // カーソルをずらす
         cursor[0] = cursor[0] + n
         cursor[1] = 1
@@ -503,11 +429,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escUpTop(n: Int) {
         print("--- escUpTop ---")
         print("n : \(n)")
-        var text = getText()
         // カーソル文字を削除する
-        if getCurrChar() == "_" && curIsSentenceEnd() {
-            let curText = text[cursor[0] - 1]
-            text[cursor[0] - 1] = String(curText.prefix(curText.count - 1))
+        if curIsSentenceEnd() {
+            allTextAttr[cursor[0] - 1].removeLast()
         }
         var move = n
         // 行数が足りないとき
@@ -520,23 +444,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソルをずらす
         cursor[0] = cursor[0] - move
         cursor[1] = 1
-        // カーソル位置に文字がないとき
+        // 空文字ならカーソル文字にする
         if getCurrChar() == "" {
-            text[cursor[0] - 1] = "_"
+            allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor))
         }
         // 空白行と空行を削除する
-        for _ in 0..<text.count {
-            // 空白でも空文字でもないとき
-            if !text[text.count - 1].isNone(text[text.count - 1]) {
+        for _ in 0..<allTextAttr.count {
+            // 最後の行が空白でも空文字でもないとき
+            if !isNone(allTextAttr[allTextAttr.count - 1]) {
                 break
             }
             // 最後の行を削除する
-            text.removeLast()
-            allTextColor.removeLast()
-        }
-        // 文を結合する
-        for i in 0..<text.count {
-            allText[i] = text[i].partition(text[i])
+            allTextAttr.removeLast()
         }
         // カーソルを表示する
         viewCursor()
@@ -557,7 +476,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // cursor[0] - n上の先頭に移動する
             escUpTop(n: cursor[0] - n)
         }
-        // カーソルを下に移動させるとき
+            // カーソルを下に移動させるとき
         else {
             // n - cursor[0]下の先頭に移動する
             escDownTop(n: n - cursor[0])
@@ -565,10 +484,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 左からmの位置に移動する
         escRight(n: m - 1)
     }
-    
+
     /* Central関連メソッド */
-    
-    // commit用変更コメント (意味なし)
     
     // centralManagerの状態が変化すると呼ばれる
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
@@ -721,7 +638,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if dataString! == "\0" {
             return
         }
-        // エスケープシーケンス のとき
+            // エスケープシーケンス のとき
         else if escSeq > 0 {
             switch escSeq {
             // シーケンス一文字目
@@ -730,7 +647,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if dataString! == "[" {
                     escSeq = 2
                 }
-                // シーケンスではなかったとき
+                    // シーケンスではなかったとき
                 else {
                     print("NO ESC_SEQ")
                     escSeq = 0
@@ -743,7 +660,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     escDisplace[0] = Int(dataString!)!
                     escSeq = 3
                 }
-                // シーケンスではなかったとき
+                    // シーケンスではなかったとき
                 else {
                     print("NO ESC_SEQ")
                     escSeq = 0
@@ -788,7 +705,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     escDisplace[1] = Int(dataString!)!
                     escSeq = 5
                 }
-                // シーケンスではなかったとき
+                    // シーケンスではなかったとき
                 else {
                     print("NO ESC_SEQ")
                     escSeq = 0
@@ -800,7 +717,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     escRoot(n: escDisplace[0], m: escDisplace[1])
                     escSeq = 0
                 }
-                // シーケンスではなかったとき
+                    // シーケンスではなかったとき
                 else {
                     print("NO ESC_SEQ")
                     escSeq = 0
@@ -808,17 +725,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             default: break
             }
         }
-        // エスケープのとき
+            // エスケープのとき
         else if dataString! == "\u{1b}" {
             escSeq = 1
         }
             
-        // BS(後退)のとき
+            // BS(後退)のとき
         else if dataString! == "\u{08}" {
             // カーソル前の文字を削除する
             deleteTextView()
         }
-        // それ以外のとき
+            // それ以外のとき
         else {
             // textViewに読み込みデータを書き込む
             writeTextView(dataString!)
@@ -842,18 +759,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // textview内のカーソル位置に文字を書き込む関数
     // string : 書き込む文字
     func writeTextView(_ string: String) {
-        textview.isScrollEnabled = false
         
         print("--- writeTextView ---")
         print("string : \(string)")
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
         
-        // 改行なら次の行を準備して返る
+        // 改行なら次の行を準備とカーソル文字を削除して返る
         if string == "\n" || string == "\r"{
             // 次のテキスト記憶を準備
-            allText.insert(["_"], at: cursor[0])
-            // 次のテキストカラー記憶を準備
-            allTextColor.insert([currColor], at: cursor[0])
+            allTextAttr.insert([textAttr(char: "_", color: currColor)], at: cursor[0])
+            // カーソルが文末のとき
+            if curIsSentenceEnd() {
+                // カーソル文字を削除する
+                allTextAttr[cursor[0] - 1].removeLast()
+            }
             return
         }
         // BS(後退)ならそのまま返る
@@ -862,26 +781,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         
         // カーソルの位置に文字と背景色を書き込む
-        allText[cursor[0] - 1].insert(string, at: cursor[1] - 1)
-        allTextColor[cursor[0] - 1].insert(currColor, at: cursor[1] - 1)
-        
-        print("allText : \(allText)")
-        print("allTextColor : \(allTextColor)")
-        
-        // textviewに設定する
-        var text = ""
-        for i in 0..<allText.count {
-            text += allText[i].joined()
-        }
-        textview.text = text
-        
-        // フォントを再設定する
-        textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
-        
-        // 画面をスクロールする
-        scrollToButtom()
+        allTextAttr[cursor[0] - 1].insert(textAttr(char: string, color: currColor), at: cursor[1] - 1)
     }
-        
+    
     // ペリフェラルに文字を書き込む関数
     // txStr : 書き込む文字
     func writePeripheral(_ txStr: String) {
@@ -896,45 +798,40 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // カーソル位置の一つ前の文字を削除する関数
     func deleteTextView() {
-        textview.isScrollEnabled = false
-        
         print("--- deleteTextView ---")
         print("get index : \(cursor[0] - 1)")
         
         // カーソル前の位置にある文字と背景色を削除する
-        allText[cursor[0] - 1].remove(at: (cursor[1] - 1) - 1)
-        allTextColor[cursor[0] - 1].remove(at: (cursor[1] - 1) - 1)
+        allTextAttr[cursor[0] - 1].remove(at: (cursor[1] - 1) - 1)
         
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
-        
-        // 画面をスクロールする
-        scrollToButtom()
     }
     
     // カーソルを表示する関数
     func viewCursor() {
         print("--- viewCursor ---")
-        let text = NSMutableAttributedString()
+        textview.isScrollEnabled = false
         
+        let text = NSMutableAttributedString()
         var attributes: [NSAttributedStringKey : Any]
         var char: NSMutableAttributedString
         
         // textviewの行数だけ繰り返す
-        for row in 0..<allText.count {
+        for row in 0..<allTextAttr.count {
             // 各行の文字数だけ繰り返す
-            for column in 0..<allText[row].count {
+            for column in 0..<allTextAttr[row].count {
                 // 背景色を設定する
                 var backColor = UIColor.white
                 // カーソル文字のとき
                 if cursor == [row + 1, column + 1] {
                     // 背景をグレーにする
-                    backColor = UIColor.gray
+                    backColor = UIColor.lightGray
                 }
                 // 文字の色を設定する
-                attributes = [.backgroundColor : backColor, .foregroundColor : currColor]
+                attributes = [.backgroundColor : backColor, .foregroundColor : allTextAttr[row][column].color]
                 // 文字に色を登録する
-                char = NSMutableAttributedString(string: allText[row][column], attributes: attributes)
+                char = NSMutableAttributedString(string: allTextAttr[row][column].char, attributes: attributes)
                 // 文字を追加する
                 text.append(char)
             }
@@ -948,16 +845,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.attributedText = text
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
+        
+        // 画面をスクロールする
+        scrollToButtom()
     }
     
     // カーソルの最後尾判断をする関数
     func curIsEnd() -> Bool {
         print("--- curIsEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
-        print("allText : \(allText)")
         
         // カーソルが最後尾を示しているとき
-        if curIsSentenceEnd() && cursor[0] == allText.count {
+        if curIsSentenceEnd() && cursor[0] == allTextAttr.count {
             return true
         }
         return false
@@ -967,10 +866,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func curIsSentenceEnd() -> Bool {
         print("--- curIsSentenceEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
-        print("allText : \(allText)")
         
         // カーソルが文末を示しているとき
-        if cursor[1] == allText[cursor[0] - 1].count && allText[cursor[0] - 1][cursor[1] - 1] == "_" {
+        if cursor[1] == allTextAttr[cursor[0] - 1].count && allTextAttr[cursor[0] - 1][cursor[1] - 1].char == "_" {
             return true
         }
         return false
@@ -981,64 +879,41 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- getCurrChar ---")
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
         // カーソルの示す位置の文字を返す
-        return allText[cursor[0] - 1][cursor[1] - 1]
+        return allTextAttr[cursor[0] - 1][cursor[1] - 1].char
     }
     
-    // allTextの文字列を改行区切りの配列で返す関数
+    // allTextAttrの文字を各行の文字列配列にして返す関数
     func getText() -> [String] {
-        var splitArray = [String]()
+        var splitArray = [""]
         // テキストの行数だけ繰り返す
-        for i in 0..<allText.count {
+        for row in 0..<allTextAttr.count {
             // 各行を文字列に結合して追加する
-            splitArray.append(allText[i].joined())
+            for column in 0..<allTextAttr[row].count {
+                splitArray[splitArray.count - 1] += allTextAttr[row][column].char
+            }
+            splitArray.append("")
         }
         return splitArray
     }
     
-    // allTextColorを返す関数
-    func getTextColor() -> [[UIColor]] {
-        return allTextColor
-    }
-    
-    // allTextに文字列を設定する関数
-    // text : 設定文字列
-    func setText(_ text: [String]) {
-        // 文字列を分解する
-        var splitText = [[String]]()
-        for row in 0..<text.count {
-            let partText = text[row].partition(text[row])
-            for column in 0..<partText.count {
-                splitText[row].append(partText[column])
+    // allTextAttrに文字と色を設定する関数
+    // text : 設定する文字列配列
+    // color : 設定する色
+    // index : 置き換える位置(指定しなければ全て置き換え)
+    func setText(_ text: [String], _ color: [[UIColor]], _ index: Int = -1) {
+        // 全置き換えのとき
+        if index == -1 {
+            // allTextAttrを初期化
+            allTextAttr.removeAll()
+            // 行数だけ繰り返す
+            for row in 0..<text.count {
+                // 文字数だけ繰り返す
+                for column in 0..<text[row].count {
+                    
+                }
             }
-            splitText.append([])
         }
-        // allTextの初期化
-        allText = []
-        // 設定文字列の行数だけ繰り返す
-        for row in 0..<text.count {
-            // 各行の列数だけ繰り返す
-            for column in 0..<text[row].count {
-                allText[row].append(splitText[row][column])
-            }
-            // 次の行の準備
-            allText.append([])
-        }
-    }
-    
-    // allTextColorに色を設定する関数
-    // color : 設定色
-    func setTextColor(_ color: [[UIColor]]) {
-        // allTextColorの初期化
-        allTextColor = []
-        // 設定色の行数だけ繰り返す
-        for row in 0..<color.count {
-            // 各行の列数だけ繰り返す
-            for column in 0..<color[row].count {
-                    allTextColor[row].append(color[row][column])
-            }
-            // 次の行の準備
-            allTextColor.append([])
-        }
+        
     }
     
     // textviewの行数と各行の文字数を返す関数
@@ -1047,8 +922,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         var count = [Int]()
         
         // 各行の文字数を格納する
-        for i in 0..<allText.count {
-            count.append(allText[i].count)
+        for row in 0..<allTextAttr.count {
+            count.append(allTextAttr[row].count)
         }
         
         print("--- getTextCount ---")
@@ -1057,6 +932,39 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         
         return count
+    }
+    
+    // textAttr配列の空白文字を削除する関数
+    // text : 対象配列
+    // limit : 削除制限
+    func delSpace(_ text: [textAttr], _ limit: Int = 0) -> [textAttr]{
+        print("--- delSpace ---")
+        var delText = text
+        var count = text.count
+        // 最後の文字が空白かつ制限内のとき
+        while delText[text.count - 1].char == " " && count > limit {
+            // 最後の文字を消す
+            delText.removeLast()
+            count -= 1
+        }
+        return delText
+    }
+    
+    // textAttr配列の文字列が空白のみかを判定する関数
+    // text : 対象配列
+    func isNone(_ text: [textAttr]) -> Bool {
+        var checkText = text
+        print("--- isNone ---")
+        // 列数だけ繰り返す
+        for _ in 0..<checkText.count {
+            // 最後の文字が空白でないとき
+            if checkText[checkText.count - 1].char != " " {
+                return false
+            }
+            // 最後の要素を削除する
+            checkText.removeLast()
+        }
+        return true
     }
     
     // textviewを最下までスクロールする関数
@@ -1070,4 +978,3 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
 }
-

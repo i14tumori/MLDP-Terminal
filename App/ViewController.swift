@@ -11,6 +11,7 @@ import CoreBluetooth
 
 
 // 失敗した
+// 失敗
 
 // String型の拡張メソッド
 extension String {
@@ -434,7 +435,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // 文字を追加
             text[cursor[0] - 1] = curText
             // テキストカラーを追加
-            color[cursor[0] - 1] = preColor
+//            color[cursor[0] - 1] = preColor
         }
         else if getCurrChar() == "" {
             curText = "_"

@@ -698,7 +698,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     escDisplace[1] = Int(dataString!)!
                     escSeq = 5
                 }
-                    // シーケンスではなかったとき
+                // シーケンスではなかったとき
                 else {
                     print("NO ESC_SEQ")
                     escSeq = 0

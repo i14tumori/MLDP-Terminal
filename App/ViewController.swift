@@ -132,10 +132,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if input == "" {
             // BS(後退)に変換する
             input = "\u{08}"
-            
-            // ずらさない可能性が高い
-            // カーソル位置をずらす
-            cursor[1] = cursor[1] - 1
         }
         // ASCIIコード外のとき
         if !input.isAlphanumeric(input) {
@@ -144,21 +140,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // ペリフェラルにデータを書き込む
         writePeripheral(input)
-        // textviewにデータを書き込む
-        writeTextView(input)
         
         // 画面をスクロールする
         scrollToButtom()
-        
-        // 改行のときのカーソル移動はいらない可能性が高い
-        // カーソルをずらす
-        if input == "\n" {
-            cursor[0] = cursor[0] + 1
-            cursor[1] = 1
-        }
-        else {
-            cursor[1] = cursor[1] + 1
-        }
         
         // カーソルを表示する
         viewCursor()
@@ -662,6 +646,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 }
             // シーケンス三文字目
             case 3:
+                // 複数桁の数値のとき
+                if dataString!.isNumeric(dataString!) {
+                    // 変位に追加する
+                    escDisplace[0] = escDisplace[0] * 10 + Int(dataString!)!
+                    break
+                }
                 switch dataString! {
                 // 正しいシーケンスのとき
                 case "A":
@@ -707,6 +697,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 }
             // シーケンス五文字目
             case 5:
+                // 複数桁の数値のとき
+                if dataString!.isNumeric(dataString!) {
+                    // 変位に追加する
+                    escDisplace[1] = escDisplace[1] * 10 + Int(dataString!)!
+                    break
+                }
                 // 正しいシーケンスのとき
                 if dataString! == "H" || dataString! == "f" {
                     escRoot(n: escDisplace[0], m: escDisplace[1])
@@ -720,23 +716,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             default: break
             }
         }
-            // エスケープのとき
+        // エスケープのとき
         else if dataString! == "\u{1b}" {
             escSeq = 1
         }
-            
-            // BS(後退)のとき
-        else if dataString! == "\u{08}" {
-            // カーソル前の文字を削除する
-            deleteTextView()
-        }
-            // それ以外のとき
+        // それ以外のとき
         else {
             // textViewに読み込みデータを書き込む
             writeTextView(dataString!)
             
             // カーソルをずらす
-            if dataString! == "\r" {
+            if dataString! == "\n" || dataString! == "\r" {
                 cursor[0] = cursor[0] + 1
                 cursor[1] = 1
             }
@@ -758,17 +748,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- writeTextView ---")
         print("string : \(string)")
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        viewChar(allTextAttr)
         
         // 改行なら次の行を準備とカーソル文字を削除して返る
-        if string == "\n" || string == "\r"{
+        if string == "\r" || string == "\n" {
             print("before row : \(allTextAttr[cursor[0] - 1])")
             // 次のテキスト記憶を準備
             allTextAttr.insert([textAttr(char: "_", color: currColor)], at: cursor[0])
+            print("prepare")
+            viewChar(allTextAttr)
             // 次の行にカーソル以降の要素を登録する
             allTextAttr[cursor[0]] = Array(allTextAttr[cursor[0] - 1][cursor[1] - 1..<allTextAttr[cursor[0] - 1].count])
+            print("register")
+            viewChar(allTextAttr)
             print("next row : \(allTextAttr[cursor[0]])")
             // カーソル行をカーソル前の文字列だけにする
             allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1][0..<cursor[1] - 1])
+            print("change")
+            viewChar(allTextAttr)
             print("cursor row : \(allTextAttr[cursor[0] - 1])")
             viewChar(allTextAttr)
             // カーソルが文末のとき
@@ -778,8 +775,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             return
         }
-        // BS(後退)ならそのまま返る
+        // BS(後退)ならテキストを削除する
         if string == "\u{08}" {
+            deleteTextView()
             return
         }
         
@@ -804,9 +802,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- deleteTextView ---")
         print("get index : \(cursor[0] - 1)")
         
+        // 削除できないとき
+        if cursor[1] == 1 {
+            return
+        }
+        
         // カーソル前の位置にある文字と背景色を削除する
         allTextAttr[cursor[0] - 1].remove(at: (cursor[1] - 1) - 1)
-        
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
     }
@@ -915,7 +917,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return delText
     }
     
-    // textAttr配列の文字列が空白のみかを判定する関数
+    // textAttr配列の文字列が空白のみかを判定する関数(空文字はfalse)
     // text : 対象配列
     func isNone(_ text: [textAttr]) -> Bool {
         var checkText = text
@@ -945,7 +947,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // 空文字に変換
                 refreshText.append([textAttr(char: "", color: currColor)])
             }
-                // 文字があるとき
+            // 文字があるとき(空文字を含む)
             else {
                 print("isNotNone")
                 refreshText.append(allTextAttr[row])
@@ -955,13 +957,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // カーソルより後ろの空文字列の削除
         print("second Refresh")
-        print("second viewChar \(viewChar(refreshText))")
+        print("second viewChar")
+        viewChar(refreshText)
         print("second cursor : [ \(cursor[0]), \(cursor[1]) ]")
         var row = refreshText.count - 1
         var count = 0
         print("second row : \(row)")
         while row > cursor[0] - 1 {
-            if refreshText[row].count != 0 {
+            if refreshText[row][0].char != "" {
                 print("break")
                 break
             }

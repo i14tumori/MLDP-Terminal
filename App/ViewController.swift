@@ -677,6 +677,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     escSeq = 0
                 case ";":
                     escSeq = 4
+                case "m":
+                    if escDisplace[0] >= 30 && escDisplace [0] <= 37 {
+                        changeColor(color: escDisplace[0])
+                    }
+                    else {
+                        print("NO ESC_SEQ")
+                    }
+                    escSeq = 0
                 // シーケンスではなかったとき
                 default:
                     print("NO ESC_SEQ")
@@ -726,9 +734,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             writeTextView(dataString!)
             
             // カーソルをずらす
+            // 改行のとき
             if dataString! == "\n" || dataString! == "\r" {
                 cursor[0] = cursor[0] + 1
                 cursor[1] = 1
+            }
+            // BS(削除)のとき
+            else if dataString! == "\u{08}" {
+                if cursor[1] > 1 {
+                    cursor[1] = cursor[1] - 1
+                }
             }
             else {
                 cursor[1] = cursor[1] + dataString!.count
@@ -811,6 +826,30 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         allTextAttr[cursor[0] - 1].remove(at: (cursor[1] - 1) - 1)
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
+    }
+    
+    // 文字色を変更する関数
+    // color : 変更する色
+    func changeColor(color: Int) {
+        switch color {
+        case 30:
+            currColor = UIColor.black
+        case 31:
+            currColor = UIColor.red
+        case 32:
+            currColor = UIColor.green
+        case 33:
+            currColor = UIColor.yellow
+        case 34:
+            currColor = UIColor.blue
+        case 35:
+            currColor = UIColor.magenta
+        case 36:
+            currColor = UIColor.cyan
+        case 37:
+            currColor = UIColor.white
+        default: break
+        }
     }
     
     // カーソルを表示する関数
@@ -896,14 +935,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textAttr配列の空白文字を削除する関数
     // text : 対象配列
-    func delSpace(_ text: [textAttr]) -> [textAttr]{
+    // limit : 削除制限数
+    func delSpace(_ text: [textAttr], _ limit: Int) -> [textAttr] {
         print("--- delSpace ---")
         var delText = text
         var count = text.count
         print("delText : \(delText)")
         print("count : \(count)")
         // 最後の文字が空白かつ制限内のとき
-        while delText[delText.count - 1].char == " " && count > 0 {
+        while delText[delText.count - 1].char == " " && count > limit {
             // 最後の文字を消す
             delText.removeLast()
             print("delText : \(delText)")
@@ -939,15 +979,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- refresh ---")
         var refreshText = [[textAttr]]()
         // 空白文字列の削除
-        print("first Refresh")
         for row in 0..<allTextAttr.count {
-            // 空白だけのとき
-            if isNone(allTextAttr[row]) {
+            // 空白だけかつカーソル行ではないとき
+            if isNone(allTextAttr[row]) && row != cursor[0] - 1 {
                 print("isNone")
                 // 空文字に変換
                 refreshText.append([textAttr(char: "", color: currColor)])
             }
-            // 文字があるとき(空文字を含む)
+            // 文字がある(空文字を含む)またはカーソル行のとき
             else {
                 print("isNotNone")
                 refreshText.append(allTextAttr[row])
@@ -956,13 +995,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         viewChar(refreshText)
         
         // カーソルより後ろの空文字列の削除
-        print("second Refresh")
-        print("second viewChar")
-        viewChar(refreshText)
-        print("second cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
         var row = refreshText.count - 1
         var count = 0
-        print("second row : \(row)")
+        print("row : \(row)")
         while row > cursor[0] - 1 {
             if refreshText[row][0].char != "" {
                 print("break")
@@ -971,14 +1007,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             row -= 1
             count += 1
         }
-        print("second after count : \(count)")
+        print("after count : \(count)")
         refreshText = Array(refreshText[0..<refreshText.count - count])
         viewChar(refreshText)
         
         // 各行末尾の空白文字列の削除
-        print("third Refresh")
         for row in 0..<refreshText.count {
-            refreshText[row] = delSpace(refreshText[row])
+            // 削除制限数
+            var limit = 0
+            if row == cursor[0] - 1 {
+                limit = cursor[1]
+            }
+            refreshText[row] = delSpace(refreshText[row], limit)
         }
         viewChar(refreshText)
         

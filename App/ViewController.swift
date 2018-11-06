@@ -8,6 +8,7 @@
 import UIKit
 import CoreBluetooth
 
+
 // 失敗
 
 // String型の拡張メソッド

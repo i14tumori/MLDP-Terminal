@@ -10,6 +10,8 @@ import CoreBluetooth
 
 // Pull用追加コメント
 // Pull用追加コメント
+// Pull用追加コメント
+// Pull用追加コメント
 
 // String型の拡張メソッド
 extension String {

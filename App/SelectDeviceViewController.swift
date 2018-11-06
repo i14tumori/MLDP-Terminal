@@ -114,14 +114,6 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         appDelegate.centralManager.connect(appDelegate.peripheral, options: nil)
     }
     
-    // デバイス配列をクリアした後再読み込みしたいけど
-    // 通知がもう一度来るわけではないのでTableViewが空欄になって終わる
-    @IBAction func reloadButtonTapped(_ sender: UIButton) {
-        // デバイス配列をクリア
-        appDelegate.discoveredDevice = []
-        reload()
-    }
-    
     @IBAction func cancelButtonTapped(_ sender: UIButton) {
         // デバイス配列をクリアし元の画面に戻る
         appDelegate.discoveredDevice = []

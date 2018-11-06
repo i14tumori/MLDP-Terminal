@@ -8,14 +8,10 @@
 import UIKit
 import CoreBluetooth
 
-// Pull用追加コメント
-// Pull用追加コメント
-// Pull用追加コメント
-// Pull用追加コメント
-
 // String型の拡張メソッド
 extension String {
     // String型を一文字ずつの配列に分解する関数
+    // text : 対象文字列
     func partition(_ text: String) -> [String] {
         print("--- partition ---")
         let count = text.count
@@ -29,11 +25,13 @@ extension String {
         return splitText
     }
     // 英数字の判定をする関数(ASCIIコードならtrueを返す)
+    // text : 対象文字
     func isAlphanumeric(_ text: String) -> Bool {
         print("--- isAlphanumeric ---")
         return text >= "\u{00}" && text <= "\u{7f}"
     }
     // 数字の判定をする関数
+    // 対象文字
     func isNumeric(_ text: String) -> Bool {
         print("--- isNumeric ---")
         let partText = text.partition(text)
@@ -46,10 +44,14 @@ extension String {
     }
 }
 
+// 文字と色を保存をする構造体
 struct textAttr {
+    // 文字を保存する変数
     var char: String
+    // 色を保存する変数
     var color: UIColor
     
+    // 初期化関数
     init(char: String, color: UIColor) {
         self.char = char
         self.color = color

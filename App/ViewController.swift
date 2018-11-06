@@ -85,10 +85,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        // textviewに枠線をつける
-//        textview.layer.borderColor = UIColor.lightGray.cgColor
-//        textview.layer.borderWidth = 1
-        
         // textviewのフォントサイズを設定する
         textview.font = UIFont.systemFont(ofSize: 12.00)
         
@@ -158,14 +154,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return false
     }
     
+    // メニューが押されたとき
+    @IBAction func menuTap(_ sender: UIButton) {
+        print("--- menu button tapped ---")
+    }
+    
     // scanButtonが押されたとき
-    @IBAction func scanTapped(_ sender: UIBarButtonItem) {
+    @IBAction func scanTap(_ sender: UIButton) {
         print("--- scan button tapped ---")
     }
     
     // disconButtonが押されたとき
-    @IBAction func disconTapped(_ sender: UIBarButtonItem) {
+    @IBAction func disconTap(_ sender: UIButton) {
         print("--- disconnect button tapped ---")
+        
         // ペリフェラルと接続されていないとき
         if appDelegate.outputCharacteristic == nil {
             print("\(appDelegate.peripheralDeviceName) is not ready")
@@ -180,7 +182,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // deleteButtonが押されたとき
-    @IBAction func delTapped(_ sender: UIBarButtonItem) {
+    @IBAction func delTap(_ sender: UIButton) {
         print("--- deviceDelete button tapped ---")
         // 記憶デバイスを消去する
         UserDefaults.standard.removeObject(forKey: "DeviceName")

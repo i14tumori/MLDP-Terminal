@@ -8,9 +8,6 @@
 import UIKit
 import CoreBluetooth
 
-
-// 失敗
-
 // String型の拡張メソッド
 extension String {
     // String型を一文字ずつの配列に分解する関数
@@ -89,8 +86,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // Do any additional setup after loading the view, typically from a nib.
         
         // textviewに枠線をつける
-        textview.layer.borderColor = UIColor.gray.cgColor
-        textview.layer.borderWidth = 0.5
+//        textview.layer.borderColor = UIColor.lightGray.cgColor
+//        textview.layer.borderWidth = 1
         
         // textviewのフォントサイズを設定する
         textview.font = UIFont.systemFont(ofSize: 12.00)
@@ -99,7 +96,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.delegate = self
         
         // textviewの初期化
-        clearButtonTapped(UIButton())
+        clear()
         
         // インスタンスの生成および初期化
         appDelegate.centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
@@ -161,30 +158,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return false
     }
     
-    // clearButtonが押されたとき
-    // textViewをクリアする
-    @IBAction func clearButtonTapped(_ sender: UIButton) {
-        print("--- clear button tapped ---")
-        // 色を初期化する
-        currColor = UIColor.black
-        // テキストの記憶を初期化する
-        allTextAttr = [[textAttr(char: "_", color: currColor)]]
-        viewChar(allTextAttr)
-        
-        // カーソル位置を初期化する
-        cursor = [1, 1]
-        // カーソル表示
-        viewCursor()
-    }
-    
     // scanButtonが押されたとき
-    // ペリフェラルスキャンを開始する
-    @IBAction func scanButtonTapped(_ sender: UIButton) {
+    @IBAction func scanTapped(_ sender: UIBarButtonItem) {
         print("--- scan button tapped ---")
     }
     
     // disconButtonが押されたとき
-    @IBAction func disconButtonTapped(_ sender: UIButton) {
+    @IBAction func disconTapped(_ sender: UIBarButtonItem) {
         print("--- disconnect button tapped ---")
         // ペリフェラルと接続されていないとき
         if appDelegate.outputCharacteristic == nil {
@@ -200,7 +180,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // deleteButtonが押されたとき
-    @IBAction func deleteButtonTapped(_ sender: UIButton) {
+    @IBAction func delTapped(_ sender: UIBarButtonItem) {
         print("--- deviceDelete button tapped ---")
         // 記憶デバイスを消去する
         UserDefaults.standard.removeObject(forKey: "DeviceName")
@@ -926,6 +906,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func curIsSentenceEnd() -> Bool {
         print("--- curIsSentenceEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
+        viewChar(allTextAttr)
         
         // カーソルが文末を示しているとき
         if cursor[1] == allTextAttr[cursor[0] - 1].count && allTextAttr[cursor[0] - 1][cursor[1] - 1].char == "_" {
@@ -1034,6 +1015,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // 変換後の配列にする
         allTextAttr = refreshText
+    }
+   
+    // textviewをクリアする関数
+    func clear() {
+        print("--- clear ---")
+        // 色を初期化する
+        currColor = UIColor.black
+        // テキストの記憶を初期化する
+        allTextAttr = [[textAttr(char: "_", color: currColor)]]
+        viewChar(allTextAttr)
+        
+        // カーソル位置を初期化する
+        cursor = [1, 1]
+        // カーソル表示
+        viewCursor()
     }
     
     // textviewを最下までスクロールする関数

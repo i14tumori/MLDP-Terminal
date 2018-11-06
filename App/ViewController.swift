@@ -77,6 +77,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var currColor: UIColor = UIColor.black
     
     @IBOutlet weak var textview: UITextView!
+    @IBOutlet weak var barView: UIStackView!
     
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate

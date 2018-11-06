@@ -34,8 +34,8 @@
                                     <action selector="menuTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="6k5-3b-NKD"/>
                                 </connections>
                             </button>
-                            <stackView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" distribution="fillProportionally" alignment="center" spacing="89" translatesAutoresizingMaskIntoConstraints="NO" id="Oy7-LX-JVm">
-                                <rect key="frame" x="16" y="20" width="287" height="30"/>
+                            <stackView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" distribution="fillProportionally" alignment="center" spacing="30" translatesAutoresizingMaskIntoConstraints="NO" id="Oy7-LX-JVm">
+                                <rect key="frame" x="103" y="20" width="169" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wDF-e9-K8g">
@@ -46,17 +46,18 @@
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="D4a-5d-4g4">
-                                        <rect key="frame" x="119" y="0.0" width="46" height="30"/>
+                                        <rect key="frame" x="60" y="0.0" width="46" height="30"/>
                                         <state key="normal" title="discon"/>
                                         <connections>
                                             <action selector="disconTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="pIa-T6-2md"/>
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0lM-hh-3X2">
-                                        <rect key="frame" x="254" y="0.0" width="33" height="30"/>
+                                        <rect key="frame" x="136" y="0.0" width="33" height="30"/>
                                         <state key="normal" title="scan"/>
                                         <connections>
                                             <action selector="scanTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="NIq-iT-bpR"/>
+                                            <segue destination="hvg-xP-iZT" kind="presentation" id="3kH-D7-gFu"/>
                                         </connections>
                                     </button>
                                 </subviews>
@@ -66,7 +67,7 @@
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
                     <connections>
-                        <outlet property="menu" destination="UgW-sE-6uP" id="GP6-nH-LdE"/>
+                        <outlet property="barView" destination="Oy7-LX-JVm" id="xEN-Mm-g0H"/>
                         <outlet property="textview" destination="V0c-4c-id7" id="SZO-kd-ffd"/>
                     </connections>
                 </viewController>

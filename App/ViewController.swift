@@ -77,7 +77,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var currColor: UIColor = UIColor.black
     
     @IBOutlet weak var textview: UITextView!
-    @IBOutlet weak var barView: UIStackView!
+    @IBOutlet weak var menu: UIButton!
+    @IBOutlet weak var backView: UIView!
+    @IBOutlet weak var scan: UIButton!
+    @IBOutlet weak var discon: UIButton!
+    @IBOutlet weak var del: UIButton!
     
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
@@ -85,6 +89,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        // メニューを隠す
+        hideMenu(duration: 0.0)
+        
+        // textviewに枠線をつける
+        textview.layer.borderColor = UIColor.lightGray.cgColor
+        textview.layer.borderWidth = 1
         
         // textviewのフォントサイズを設定する
         textview.font = UIFont.systemFont(ofSize: 12.00)
@@ -155,9 +166,39 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return false
     }
     
+    var tapCount = 0
     // メニューが押されたとき
     @IBAction func menuTap(_ sender: UIButton) {
         print("--- menu button tapped ---")
+        tapCount = (tapCount + 1) % 2
+        print("tapCount : \(tapCount)")
+        switch tapCount {
+        case 0:
+            hideMenu(duration: 1.0)
+        case 1:
+            showMenu(duration: 1.0)
+        default: break
+        }
+    }
+    
+    // メニューを隠す関数
+    func hideMenu(duration second: Float) {
+        UIView.animate(withDuration: TimeInterval(second)) {
+            self.backView.center.x = 0
+        }
+        UIView.animate(withDuration: TimeInterval(second)) {
+            self.backView.alpha = 0.0
+        }
+    }
+    
+    // メニューを表示する関数
+    func showMenu(duration second: Float) {
+        UIView.animate(withDuration: TimeInterval(second)) {
+            self.backView.center.x = self.view.center.x
+        }
+        UIView.animate(withDuration: TimeInterval(second)) {
+            self.backView.alpha = 1.0
+        }
     }
     
     // scanButtonが押されたとき
@@ -419,6 +460,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         cursor[0] = cursor[0] - move
         cursor[1] = 1
         print("after cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        print("allText char")
+        for row in 0..<allTextAttr.count {
+            for column in 0..<allTextAttr[row].count {
+                print("char : \(allTextAttr[row][column].char)")
+            }
+        }
+        print("allText count")
+        for row in 0..<allTextAttr.count {
+            print("row : \(row), column : \(allTextAttr[row].count)")
+        }
         // 空文字ならカーソル文字にする
         if getCurrChar() == "" {
             allTextAttr[cursor[0] - 1][cursor[1] - 1] = textAttr(char: "_", color: currColor)
@@ -771,7 +822,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             viewChar(allTextAttr)
             print("next row : \(allTextAttr[cursor[0]])")
             // カーソル行をカーソル前の文字列だけにする
-            allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1][0..<cursor[1] - 1])
+            // カーソル前に文字列がない(カーソルが一列目を指している)とき
+            if cursor[1] == 1 {
+                allTextAttr[cursor[0] - 1] = [textAttr(char: "", color: currColor)]
+            }
+            // カーソル前に文字列があるとき
+            else {
+                allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1][0..<cursor[1] - 1])
+            }
             print("change")
             viewChar(allTextAttr)
             print("cursor row : \(allTextAttr[cursor[0] - 1])")
@@ -922,6 +980,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func getCurrChar() -> String {
         print("--- getCurrChar ---")
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        viewChar(allTextAttr)
         print("return : \(allTextAttr[cursor[0] - 1][cursor[1] - 1].char)")
         // カーソルの示す位置の文字を返す
         return allTextAttr[cursor[0] - 1][cursor[1] - 1].char

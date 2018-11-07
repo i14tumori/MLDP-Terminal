@@ -62,6 +62,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     var timer: Timer?
     
+    // 通知変数
+    let notification = NotificationCenter.default
+    
     // スクリーンサイズ
     var screenSize = UIScreen.main.bounds.size
     // textviewのフレーム記憶変数
@@ -150,6 +153,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         print("--- touches began ---")
         // キーボードを閉じる
+        keyboardDown()
+    }
+    
+    // キーボードを閉じる関数
+    @objc func keyboardDown() {
+        print("--- keyboardDown ---")
         self.view.endEditing(true)
     }
     
@@ -190,7 +199,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textview移動のNotificationを設定する関数
     func configureObserver() {
-        let notification = NotificationCenter.default
+        print("-- configureObserver ---")
         // キーボード出現の検知
         notification.addObserver(self, selector: #selector(keyboardWillShow(notification:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
         // キーボード終了の検知
@@ -201,28 +210,35 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textview移動のNotificationを削除する関数
     func removeObserver() {
-        let notification = NotificationCenter.default
+        print("--- removeObserver ---")
         notification.removeObserver(self)
     }
     
     // キーボードが現れるときに画面をずらす関数
     @objc func keyboardWillShow(notification: Notification?) {
+        print("--- keyboardWillShow ---")
         // キーボードの高さを取得する
         let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
         // textviewの高さを変更する
-        textview.frame = CGRect(origin: textFrame.origin, size: CGSize(width: self.view.bounds.width, height: screenSize.height - menu.bounds.height - keyboardHeight - 5))
+        textview.frame = CGRect(origin: textFrame.origin, size: CGSize(width: self.view.bounds.width, height: screenSize.height - menu.bounds.height - keyboardHeight - 20))
         // スクロールする
         scrollToButtom()
     }
     
     // キーボードが消えるときに画面を戻す関数
     @objc func keyboardWillHide(notification: Notification?) {
+        print("--- keyboardWillHide ---")
         // 初期の位置に戻す
         textview.frame = CGRect(origin: textFrame.origin, size: CGSize(width: self.view.bounds.width, height: textFrame.height))
+        // スクロールする
+        scrollToButtom()
     }
     
     // 画面が回転したときに呼ばれる関数
     @objc func onOrientationChange(notification: Notification?) {
+        print("--- onOrientationChange ---")
+        screenSize = UIScreen.main.bounds.size
+        textFrame = textview.frame
         // indicatorを表示しているとき
         if appDelegate.indicator.isShow {
             // 再表示
@@ -251,6 +267,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // メニューを隠す関数
     // second : 表示アニメーションの秒数
     func hideMenu(duration second: Float) {
+        print("--- hideMenu ---")
         // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
             self.backView.center.x = 0
@@ -264,6 +281,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // メニューを表示する関数
     // second : 表示アニメーションの秒数
     func showMenu(duration second: Float) {
+        print("--- showMenu ---")
         // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
             self.backView.center.x = self.view.center.x - self.menu.bounds.width
@@ -337,11 +355,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // ペリフェラルにエスケープを書き込む
         writePeripheral("\u{1b}")
-    }
-    
-    // 追加ボタンCtrlが押されたとき
-    @objc func ctrlTapped() {
-        print("--- ctrl ---")
     }
     
     // 追加ボタン↑が押されたとき

@@ -19,7 +19,7 @@ class CustomTextView: UITextView {
         commonInit()
     }
     
-    private func commonInit() {
+    func commonInit() {
         // ボタンを追加するViewを作成,設定
         let keyboard = UIStackView(frame: CGRect(x: 0, y: 0, width: 320, height: 40))
         keyboard.axis = .horizontal
@@ -38,12 +38,6 @@ class CustomTextView: UITextView {
         escButton.backgroundColor = UIColor.lightGray
         escButton.setTitle("ESC", for: UIControlState.normal)
         escButton.addTarget(ViewController(), action: #selector(ViewController.escTapped), for: UIControlEvents.touchUpInside)
-        
-        // コントロールキーの作成、設定
-        let ctrlButton = UIButton(frame: CGRect())
-        ctrlButton.backgroundColor = UIColor.lightGray
-        ctrlButton.setTitle("Ctrl", for: UIControlState.normal)
-        ctrlButton.addTarget(ViewController(), action: #selector(ViewController.ctrlTapped), for: UIControlEvents.touchUpInside)
         
         // 上矢印キーの作成、設定
         let upButton = UIButton(frame: CGRect())
@@ -69,13 +63,20 @@ class CustomTextView: UITextView {
         rightButton.setTitle("→", for: UIControlState.normal)
         rightButton.addTarget(ViewController(), action: #selector(ViewController.rightTapped), for: UIControlEvents.touchUpInside)
         
+        // キーボードダウンキーの作成、設定
+        let keyDownButton = UIButton(frame: CGRect())
+        keyDownButton.backgroundColor = UIColor.lightGray
+        keyDownButton.setTitle("done", for: UIControlState.normal)
+        keyDownButton.addTarget(ViewController(), action: #selector(ViewController.keyboardDown), for: UIControlEvents.touchUpInside)
+        
+        
         // ボタンをViewに追加する
         keyboard.addArrangedSubview(escButton)
-        keyboard.addArrangedSubview(ctrlButton)
         keyboard.addArrangedSubview(upButton)
         keyboard.addArrangedSubview(downButton)
         keyboard.addArrangedSubview(leftButton)
         keyboard.addArrangedSubview(rightButton)
+        keyboard.addArrangedSubview(keyDownButton)
         
         // ボタンViewに背景をつける
         backView.addSubview(keyboard)

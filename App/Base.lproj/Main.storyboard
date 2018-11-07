@@ -75,10 +75,7 @@
                     </view>
                     <connections>
                         <outlet property="backView" destination="pqo-cn-sbq" id="yO6-i4-fwq"/>
-                        <outlet property="del" destination="wDF-e9-K8g" id="qhz-az-J5Q"/>
-                        <outlet property="discon" destination="D4a-5d-4g4" id="MNS-Ii-p03"/>
                         <outlet property="menu" destination="UgW-sE-6uP" id="Hh8-tn-FWj"/>
-                        <outlet property="scan" destination="0lM-hh-3X2" id="oBQ-3r-bgW"/>
                         <outlet property="textview" destination="V0c-4c-id7" id="SZO-kd-ffd"/>
                     </connections>
                 </viewController>

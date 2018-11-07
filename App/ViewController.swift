@@ -61,6 +61,10 @@ struct textAttr {
 class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITextViewDelegate {
     
     var timer: Timer?
+    // スクリーンサイズ
+    let screenSize = UIScreen.main.bounds.size
+    // textviewのフレーム記憶変数
+    var textFrame = CGRect()
     
     // エスケープシーケンス判断用フラグ
     var escSeq = 0
@@ -79,13 +83,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var textview: UITextView!
     @IBOutlet weak var menu: UIButton!
     @IBOutlet weak var backView: UIView!
-    @IBOutlet weak var scan: UIButton!
-    @IBOutlet weak var discon: UIButton!
-    @IBOutlet weak var del: UIButton!
     
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
     
+    // viewが読み込まれたときのイベント
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -103,6 +105,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // textviewのデリゲートをセット
         textview.delegate = self
         
+        // textviewのフレームを記憶する
+        textFrame = textview.frame
+        
         // textviewの初期化
         clear()
         
@@ -110,11 +115,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         appDelegate.centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
     }
     
+    // viewを表示する前のイベント
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(true)
         
+        // centralManagerのデリゲートをセットする
         print("centralManagerDelegate set")
         appDelegate.centralManager.delegate = self
+        
+        // Notificationを設定する
+        configureObserver()
+    }
+    
+    // viewが消える前のイベント
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(true)
+        
+        // Notificationを削除する
+        removeObserver()
     }
     
     override func didReceiveMemoryWarning() {
@@ -124,14 +142,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     /* Bluetooth以外関連メソッド */
     
-    // タッチ開始時のタッチイベント
+    // タッチ開始時のイベント
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         print("--- touches began ---")
         // キーボードを閉じる
         self.view.endEditing(true)
     }
     
-    // textViewの入力値を取得し、カーソル位置に追記
+    // textViewの入力値を取得し、カーソル位置に追記する関数
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         print("--- textView Edit ---")
         
@@ -166,47 +184,89 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return false
     }
     
+    // textview移動のNotificationを設定する関数
+    func configureObserver() {
+        let notification = NotificationCenter.default
+        notification.addObserver(self, selector: #selector(keyboardWillShow(notification:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        notification.addObserver(self, selector: #selector(keyboardWillHide(notification:)), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+    }
+    
+    // textview移動のNotificationを削除する関数
+    func removeObserver() {
+        let notification = NotificationCenter.default
+        notification.removeObserver(self)
+    }
+    
+    // キーボードが現れるときに画面をずらす関数
+    @objc func keyboardWillShow(notification: Notification?) {
+        // キーボードの高さを取得する
+        let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
+        // textviewの高さを変更する
+        textview.frame = CGRect(origin: textFrame.origin, size: CGSize(width: self.view.bounds.width, height: screenSize.height - menu.bounds.height - keyboardHeight - 5))
+        // スクロールする
+        scrollToButtom()
+    }
+    
+    // キーボードが消えるときに画面を戻す関数
+    @objc func keyboardWillHide(notification: Notification?) {
+        // 初期の位置に戻す
+        textview.frame = textFrame
+    }
+    
+    // 表示を制御する変数
     var tapCount = 0
     // メニューが押されたとき
+    // sender : 押下ボタン
     @IBAction func menuTap(_ sender: UIButton) {
         print("--- menu button tapped ---")
+        // 表示非表示を切り替える
         tapCount = (tapCount + 1) % 2
         print("tapCount : \(tapCount)")
         switch tapCount {
         case 0:
+            // メニューを非表示状態にする
             hideMenu(duration: 1.0)
         case 1:
+            // メニューを表示状態にする
             showMenu(duration: 1.0)
         default: break
         }
     }
     
     // メニューを隠す関数
+    // second : 表示アニメーションの秒数
     func hideMenu(duration second: Float) {
+        // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
             self.backView.center.x = 0
         }
+        // メニューを隠す
         UIView.animate(withDuration: TimeInterval(second)) {
             self.backView.alpha = 0.0
         }
     }
     
     // メニューを表示する関数
+    // second : 表示アニメーションの秒数
     func showMenu(duration second: Float) {
+        // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
             self.backView.center.x = self.view.center.x
         }
+        // メニューを表示する
         UIView.animate(withDuration: TimeInterval(second)) {
             self.backView.alpha = 1.0
         }
     }
     
     // scanButtonが押されたとき
+    // sender : 押下ボタン
     @IBAction func scanTap(_ sender: UIButton) {
         print("--- scan button tapped ---")
     }
     
     // disconButtonが押されたとき
+    // sender : 押下ボタン
     @IBAction func disconTap(_ sender: UIButton) {
         print("--- disconnect button tapped ---")
         
@@ -224,6 +284,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // deleteButtonが押されたとき
+    // sender : 押下ボタン
     @IBAction func delTap(_ sender: UIButton) {
         print("--- deviceDelete button tapped ---")
         // 記憶デバイスを消去する
@@ -315,6 +376,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     /* エスケープシーケンスメソッド */
 
     // 上にn移動する関数
+    // n : 変位
     func escUp(n: Int) {
         print("--- escUp ---")
         print("n : \(n)")
@@ -324,6 +386,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // 下にn移動する関数
+    // n : 変位
     func escDown(n: Int) {
         print("--- escDown ---")
         print("n : \(n)")
@@ -333,6 +396,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // 右にn移動する関数
+    // n : 変位
     func escRight(n: Int) {
         print("--- escRight ---")
         print("n : \(n)")
@@ -374,6 +438,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // 左にn移動する関数
+    // n : 変位
     func escLeft(n: Int) {
         print("--- escLeft ---")
         print("n : \(n)")
@@ -403,6 +468,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // n行下の先頭に移動する関数
+    // n : 変位
     func escDownTop(n: Int) {
         print("--- escDownTop ---")
         print("n : \(n)")
@@ -436,6 +502,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // n行上の先頭に移動する関数
+    // n : 変位
     func escUpTop(n: Int) {
         print("--- escUpTop ---")
         print("n : \(n)")
@@ -491,6 +558,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // 現在位置と関係なく上からn、左からmの場所に移動する関数
+    // n : 変位
+    // m : 変位
     func escRoot(n: Int, m: Int) {
         print("--- escRoot ---")
         print("n : \(n), m : \(m)")
@@ -510,7 +579,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
 
     /* Central関連メソッド */
     
-    // centralManagerの状態が変化すると呼ばれる
+    // centralManagerの状態が変化すると呼ばれるイベント
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOff:
@@ -541,7 +610,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    // ペリフェラルへの接続が成功すると呼ばれる
+    // ペリフェラルへの接続が成功すると呼ばれるイベント
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         print("接続成功")
         print("接続デバイス:\(appDelegate.peripheral.name!)")
@@ -555,7 +624,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         appDelegate.peripheral.discoverServices([appDelegate.mldpService_UUID])
     }
     
-    // ペリフェラルとの切断が完了すると呼ばれる
+    // ペリフェラルとの切断が完了すると呼ばれるイベント
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         print("disconnect complete")
         // トーストを出力する
@@ -569,7 +638,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     /* Peripheral関連メソッド */
     
-    // サービスを発見すると呼ばれる
+    // サービスを発見すると呼ばれるイベント
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         // エラーのときは原因を出力してreturn
         if error != nil {
@@ -591,7 +660,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    // キャラクタリスティックを発見すると呼ばれる
+    // キャラクタリスティックを発見すると呼ばれるイベント
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         // エラーのときは原因を出力してreturn
         if error != nil {
@@ -629,7 +698,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    // Notify開始/停止時に呼ばれる
+    // Notify開始/停止時に呼ばれるイベント
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
         if error != nil {
             print(error.debugDescription)
@@ -638,7 +707,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    // データ更新時に呼ばれる
+    // peripheralからデータが届いたときのイベント
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         // エラーのときは原因を出力してreturn
         if error != nil {
@@ -656,9 +725,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         let dataString = String(data: data!, encoding: .utf8)
         
         print("dataString:\(String(describing: dataString))")
-        
+       
         // \0(nil)のとき
-        if dataString! == "\0" {
+        if dataString == nil {
             return
         }
         // エスケープシーケンス のとき
@@ -952,6 +1021,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // カーソルの最後尾判断をする関数
+    // 返り値 : 最後尾->true, それ以外->false
     func curIsEnd() -> Bool {
         print("--- curIsEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
@@ -964,6 +1034,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // カーソルの文末判断をする関数
+    // 返り値 : 文末->true, それ以外->false
     func curIsSentenceEnd() -> Bool {
         print("--- curIsSentenceEnd ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
@@ -977,6 +1048,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // カーソルの示す文字を取得する関数
+    // 返り値 : カーソルの示す文字
     func getCurrChar() -> String {
         print("--- getCurrChar ---")
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
@@ -989,6 +1061,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // textAttr配列の空白文字を削除する関数
     // text : 対象配列
     // limit : 削除制限数
+    // 返り値 : 空白が削除されたtextAttr配列
     func delSpace(_ text: [textAttr], _ limit: Int) -> [textAttr] {
         print("--- delSpace ---")
         var delText = text
@@ -1012,6 +1085,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textAttr配列の文字列が空白のみかを判定する関数(空文字はfalse)
     // text : 対象配列
+    // 返り値 : 空白のみ->true, それ以外->false
     func isNone(_ text: [textAttr]) -> Bool {
         var checkText = text
         print("--- isNone ---")
@@ -1104,7 +1178,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.setContentOffset(scrollPoint, animated: false)
     }
     
-    // デバッグ用関数
+    // デバッグ用関数 (非確実的動作)
     func viewChar(_ text: [[textAttr]]) {
         print("--- viewChar ---")
         let allTextAttr = text

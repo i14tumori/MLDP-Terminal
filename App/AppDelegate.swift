@@ -14,7 +14,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
-    // ViewController間で受け渡しが必要な変数一覧
+    /* ViewController間で受け渡しが必要な変数一覧 */
+    
     var isScanning = false
     var centralManager: CBCentralManager!
     var peripheral: CBPeripheral!
@@ -26,8 +27,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var discoveredDevice: [CBPeripheral] = []
     
     let peripheralDeviceName = "BLE_DEVICE"
+    // MLDPのUUID
     let mldpService_UUID = CBUUID(string: "00035B03-58E6-07DD-021A-08123A000300")
+    // notify-write用UUID
     let mldpCharacteristic_UUID1 = CBUUID(string: "00035B03-58E6-07DD-021A-08123A000301")
+    // read-write用UUID
     let mldpCharacteristic_UUID2 = CBUUID(string: "00035B03-58E6-07DD-021A-08123A0003FF")
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {

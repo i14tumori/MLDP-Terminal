@@ -20,7 +20,7 @@ class CustomTextView: UITextView {
     }
     
     private func commonInit() {
-        // ボタンを追加するViewを作成、設定
+        // ボタンを追加するViewを作成,設定
         let keyboard = UIStackView(frame: CGRect(x: 0, y: 0, width: 320, height: 40))
         keyboard.axis = .horizontal
         keyboard.alignment = .center

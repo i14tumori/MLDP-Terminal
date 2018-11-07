@@ -8,9 +8,13 @@
 
 import Foundation
 import UIKit
+import CoreBluetooth
 
 // 処理中の画面を表示するためのクラス
 class BusyIndicator: UIView {
+    // 表示状態を表す変数
+    var isShow = false
+    
     // 基本的な見た目などの初期化
     private func commonInit() {
         let bundle = Bundle(for: type(of: self))
@@ -32,8 +36,10 @@ class BusyIndicator: UIView {
         return instance
     }()
     
-    // 表示する
+    // 表示する関数
     func show(controller: UIViewController) {
+        // 表示状態にする
+        isShow = true
         // 画面全体を覆わせる
         self.frame = UIScreen.main.bounds
         print("rootViewController : \(String(describing: controller))")
@@ -42,8 +48,10 @@ class BusyIndicator: UIView {
         vc.view.addSubview(self)
     }
     
-    // 非表示にする
+    // 非表示にする関数
     func dismiss() {
+        // 非表示状態にする
+        isShow = false
         // Viewを除去して非表示にする
         self.removeFromSuperview()
     }

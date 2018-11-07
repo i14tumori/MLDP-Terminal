@@ -63,11 +63,44 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
                 }
             }
         }
+        
+        // Notificationを設定する
+        configureObserver()
+    }
+    
+    // viewが消える前のイベント
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(true)
+        
+        // Notificationを削除する
+        removeObserver()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    // textview移動のNotificationを設定する関数
+    func configureObserver() {
+        let notification = NotificationCenter.default
+        // 画面回転の検知
+        notification.addObserver(self, selector: #selector(onOrientationChange(notification:)), name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
+    }
+    
+    // textview移動のNotificationを削除する関数
+    func removeObserver() {
+        let notification = NotificationCenter.default
+        notification.removeObserver(self)
+    }
+    
+    // 画面が回転したときに呼ばれる関数
+    @objc func onOrientationChange(notification: Notification?) {
+        // indicatorを表示しているとき
+        if appDelegate.indicator.isShow {
+            // 再表示
+            appDelegate.indicator.show(controller: self)
+        }
     }
     
      /* Bluetooth以外関連メソッド */
@@ -127,16 +160,28 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         switch central.state {
         case .poweredOff:
             print("Bluetoothの電源がOff")
+            // Indicator表示開始
+            appDelegate.indicator.show(controller: self)
         case .poweredOn:
             print("Bluetoothの電源はOn")
+            // Indicator表示終了
+            appDelegate.indicator.dismiss()
         case .resetting:
             print("レスティング状態")
+            // Indicator表示開始
+            appDelegate.indicator.show(controller: self)
         case .unauthorized:
             print("非認証状態")
+            // Indicator表示開始
+            appDelegate.indicator.show(controller: self)
         case .unknown:
             print("不明")
+            // Indicator表示開始
+            appDelegate.indicator.show(controller: self)
         case .unsupported:
             print("非対応")
+            // Indicator表示開始
+            appDelegate.indicator.show(controller: self)
         }
     }
     

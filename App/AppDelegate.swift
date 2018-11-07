@@ -16,6 +16,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     /* ViewController間で受け渡しが必要な変数一覧 */
     
+    /* Bluetooth関連 */
+    
     var isScanning = false
     var centralManager: CBCentralManager!
     var peripheral: CBPeripheral!
@@ -33,6 +35,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let mldpCharacteristic_UUID1 = CBUUID(string: "00035B03-58E6-07DD-021A-08123A000301")
     // read-write用UUID
     let mldpCharacteristic_UUID2 = CBUUID(string: "00035B03-58E6-07DD-021A-08123A0003FF")
+    
+    /* その他 */
+    
+    var indicator = BusyIndicator.sharedManager
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.

@@ -61,8 +61,9 @@ struct textAttr {
 class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITextViewDelegate {
     
     var timer: Timer?
+    
     // スクリーンサイズ
-    let screenSize = UIScreen.main.bounds.size
+    var screenSize = UIScreen.main.bounds.size
     // textviewのフレーム記憶変数
     var textFrame = CGRect()
     
@@ -79,6 +80,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 色の一時記憶変数
     var currColor: UIColor = UIColor.black
+    
+    // メニュー表示を制御する変数
+    var tapCount = 0
     
     @IBOutlet weak var textview: UITextView!
     @IBOutlet weak var menu: UIButton!
@@ -187,8 +191,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // textview移動のNotificationを設定する関数
     func configureObserver() {
         let notification = NotificationCenter.default
+        // キーボード出現の検知
         notification.addObserver(self, selector: #selector(keyboardWillShow(notification:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        // キーボード終了の検知
         notification.addObserver(self, selector: #selector(keyboardWillHide(notification:)), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+        // 画面回転の検知
+        notification.addObserver(self, selector: #selector(onOrientationChange(notification:)), name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
     }
     
     // textview移動のNotificationを削除する関数
@@ -210,11 +218,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // キーボードが消えるときに画面を戻す関数
     @objc func keyboardWillHide(notification: Notification?) {
         // 初期の位置に戻す
-        textview.frame = textFrame
+        textview.frame = CGRect(origin: textFrame.origin, size: CGSize(width: self.view.bounds.width, height: textFrame.height))
     }
     
-    // 表示を制御する変数
-    var tapCount = 0
+    // 画面が回転したときに呼ばれる関数
+    @objc func onOrientationChange(notification: Notification?) {
+        // indicatorを表示しているとき
+        if appDelegate.indicator.isShow {
+            // 再表示
+            appDelegate.indicator.show(controller: self)
+        }
+    }
+    
     // メニューが押されたとき
     // sender : 押下ボタン
     @IBAction func menuTap(_ sender: UIButton) {
@@ -225,10 +240,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         switch tapCount {
         case 0:
             // メニューを非表示状態にする
-            hideMenu(duration: 1.0)
+            hideMenu(duration: 0.7)
         case 1:
             // メニューを表示状態にする
-            showMenu(duration: 1.0)
+            showMenu(duration: 0.7)
         default: break
         }
     }
@@ -251,7 +266,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func showMenu(duration second: Float) {
         // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
-            self.backView.center.x = self.view.center.x
+            self.backView.center.x = self.view.center.x - self.menu.bounds.width
         }
         // メニューを表示する
         UIView.animate(withDuration: TimeInterval(second)) {
@@ -585,27 +600,27 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         case .poweredOff:
             print("Bluetooth電源 : OFF")
             // Indicator表示開始
-            BusyIndicator.sharedManager.show(controller: self)
+            appDelegate.indicator.show(controller: self)
             showToast(message: "Bluetoothの電源がOFF")
         case .poweredOn:
             // Indicator表示終了
-            BusyIndicator.sharedManager.dismiss()
+            appDelegate.indicator.dismiss()
             print("Bluetooth電源 : ON")
         case .resetting:
             // Indicator表示開始
-            BusyIndicator.sharedManager.show(controller: self)
+            appDelegate.indicator.show(controller: self)
             print("レスティング状態")
         case .unauthorized:
             // Indicator表示開始
-            BusyIndicator.sharedManager.show(controller: self)
+            appDelegate.indicator.show(controller: self)
             print("非認証状態")
         case .unknown:
             // Indicator表示開始
-            BusyIndicator.sharedManager.show(controller: self)
+            appDelegate.indicator.show(controller: self)
             print("不明")
         case .unsupported:
             // Indicator表示開始
-            BusyIndicator.sharedManager.show(controller: self)
+            appDelegate.indicator.show(controller: self)
             print("非対応")
         }
     }

@@ -65,11 +65,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 通知変数
     let notification = NotificationCenter.default
     
-    // スクリーンサイズ
-    var screenSize = UIScreen.main.bounds.size
-    // textviewのフレーム記憶変数
-    var textFrame = CGRect()
-    
     // エスケープシーケンス判断用フラグ
     var escSeq = 0
     // エスケープシーケンス変位記憶変数
@@ -111,9 +106,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // textviewのデリゲートをセット
         textview.delegate = self
-        
-        // textviewのフレームを記憶する
-        textFrame = textview.frame
         
         // textviewの初期化
         clear()
@@ -199,7 +191,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textview移動のNotificationを設定する関数
     func configureObserver() {
-        print("-- configureObserver ---")
+        print("--- configureObserver ---")
         // キーボード出現の検知
         notification.addObserver(self, selector: #selector(keyboardWillShow(notification:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
         // キーボード終了の検知
@@ -219,8 +211,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- keyboardWillShow ---")
         // キーボードの高さを取得する
         let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
+        print("keyboardHeight : \(keyboardHeight)")
         // textviewの高さを変更する
-        textview.frame = CGRect(origin: textFrame.origin, size: CGSize(width: self.view.bounds.width, height: screenSize.height - menu.bounds.height - keyboardHeight - 20))
+         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
         // スクロールする
         scrollToButtom()
     }
@@ -229,7 +222,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @objc func keyboardWillHide(notification: Notification?) {
         print("--- keyboardWillHide ---")
         // 初期の位置に戻す
-        textview.frame = CGRect(origin: textFrame.origin, size: CGSize(width: self.view.bounds.width, height: textFrame.height))
+        textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - textview.frame.origin.y))
         // スクロールする
         scrollToButtom()
     }
@@ -237,8 +230,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 画面が回転したときに呼ばれる関数
     @objc func onOrientationChange(notification: Notification?) {
         print("--- onOrientationChange ---")
-        screenSize = UIScreen.main.bounds.size
-        textFrame = textview.frame
         // indicatorを表示しているとき
         if appDelegate.indicator.isShow {
             // 再表示
@@ -753,9 +744,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         let dataString = String(data: data!, encoding: .utf8)
         
         print("dataString:\(String(describing: dataString))")
+        
+        // 複数文字届いたとき
+        if dataString!.count > 1 {
+            return
+        }
        
         // \0(nil)のとき
         if dataString == nil {
+            return
+        }
+        // ASCIIコード外のとき
+        else if !dataString!.isAlphanumeric(dataString!) {
             return
         }
         // エスケープシーケンス のとき

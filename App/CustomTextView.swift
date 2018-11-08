@@ -9,6 +9,10 @@
 import UIKit
 
 class CustomTextView: UITextView {
+    
+    // ボタン追加Viewの背景用View
+    private let backView = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 40))
+    
     override init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
         commonInit()
@@ -19,7 +23,7 @@ class CustomTextView: UITextView {
         commonInit()
     }
     
-    func commonInit() {
+    private func commonInit() {
         // ボタンを追加するViewを作成,設定
         let keyboard = UIStackView(frame: CGRect(x: 0, y: 0, width: 320, height: 40))
         keyboard.axis = .horizontal
@@ -28,42 +32,41 @@ class CustomTextView: UITextView {
         keyboard.spacing = 3
         keyboard.sizeToFit()
         
-        // ボタン追加Viewの背景用View
-        let backView = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 40))
+        // ボタン追加Viewの背景用Viewを設定
         backView.backgroundColor = UIColor.gray
         backView.sizeToFit()
         
-        // エスケープキーの作成、設定
+        // エスケープキーの作成,設定
         let escButton = UIButton(frame: CGRect())
         escButton.backgroundColor = UIColor.lightGray
         escButton.setTitle("ESC", for: UIControlState.normal)
         escButton.addTarget(ViewController(), action: #selector(ViewController.escTapped), for: UIControlEvents.touchUpInside)
         
-        // 上矢印キーの作成、設定
+        // 上矢印キーの作成,設定
         let upButton = UIButton(frame: CGRect())
         upButton.backgroundColor = UIColor.lightGray
         upButton.setTitle("↑", for: UIControlState.normal)
         upButton.addTarget(ViewController(), action: #selector(ViewController.upTapped), for: UIControlEvents.touchUpInside)
         
-        // 下矢印キーの作成、設定
+        // 下矢印キーの作成,設定
         let downButton = UIButton(frame: CGRect())
         downButton.backgroundColor = UIColor.lightGray
         downButton.setTitle("↓", for: UIControlState.normal)
         downButton.addTarget(ViewController(), action: #selector(ViewController.downTapped), for: UIControlEvents.touchUpInside)
         
-        // 左矢印キーの作成、設定
+        // 左矢印キーの作成,設定
         let leftButton = UIButton(frame: CGRect())
         leftButton.backgroundColor = UIColor.lightGray
         leftButton.setTitle("←", for: UIControlState.normal)
         leftButton.addTarget(ViewController(), action: #selector(ViewController.leftTapped), for: UIControlEvents.touchUpInside)
         
-        // 右矢印キーの作成、設定
+        // 右矢印キーの作成,設定
         let rightButton = UIButton(frame: CGRect())
         rightButton.backgroundColor = UIColor.lightGray
         rightButton.setTitle("→", for: UIControlState.normal)
         rightButton.addTarget(ViewController(), action: #selector(ViewController.rightTapped), for: UIControlEvents.touchUpInside)
         
-        // キーボードダウンキーの作成、設定
+        // キーボードダウンキーの作成,設定
         let keyDownButton = UIButton(frame: CGRect())
         keyDownButton.backgroundColor = UIColor.lightGray
         keyDownButton.setTitle("done", for: UIControlState.normal)
@@ -83,6 +86,11 @@ class CustomTextView: UITextView {
         
         // textViewと紐付ける
         self.inputAccessoryView = backView
+    }
+    
+    // 背景viewのサイズを取得する関数
+    func getBackViewSize() -> CGSize {
+        return backView.frame.size
     }
     
     // 入力カーソル非表示

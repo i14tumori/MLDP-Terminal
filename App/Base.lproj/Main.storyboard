@@ -48,15 +48,6 @@
                                             <segue destination="hvg-xP-iZT" kind="presentation" id="3kH-D7-gFu"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wDF-e9-K8g">
-                                        <rect key="frame" x="-1" y="5" width="58" height="35"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES" heightSizable="YES" flexibleMaxY="YES"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="20"/>
-                                        <state key="normal" title="del"/>
-                                        <connections>
-                                            <action selector="delTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="3kP-0y-w1S"/>
-                                        </connections>
-                                    </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="D4a-5d-4g4">
                                         <rect key="frame" x="90" y="6" width="73" height="35"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES" heightSizable="YES" flexibleMaxY="YES"/>
@@ -64,6 +55,15 @@
                                         <state key="normal" title="discon"/>
                                         <connections>
                                             <action selector="disconTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="pIa-T6-2md"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wDF-e9-K8g">
+                                        <rect key="frame" x="-1" y="5" width="58" height="35"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES" heightSizable="YES" flexibleMaxY="YES"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="20"/>
+                                        <state key="normal" title="del"/>
+                                        <connections>
+                                            <action selector="delTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="3kP-0y-w1S"/>
                                         </connections>
                                     </button>
                                 </subviews>

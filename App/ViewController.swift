@@ -87,17 +87,26 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // エスケープシーケンス変位記憶変数
     var escDisplace = [0, 0]
     
+    // カーソルの基底位置を記憶する変数
+    var base = 0
     // カーソル位置記憶変数
     var cursor = [1, 1]
-    
     // テキスト保存変数
     var allTextAttr = [[textAttr]]()
-    
     // 色の一時記憶変数
-    var currColor: UIColor = UIColor.black
+    var currColor = UIColor.black
+    // 画面サイズ記憶変数
+    var viewSize = [0, 0]
+    // 表示テキスト変数
+    var displayText = [[textAttr]]()
     
     // メニュー表示を制御する変数
     var tapCount = 0
+    
+    // トースト状態管理変数
+    var toast = false
+    // トーストメッセージの一時記憶変数
+    var tempToastMessage = ""
     
     @IBOutlet weak var textview: UITextView!
     @IBOutlet weak var menu: UIButton!
@@ -134,6 +143,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // viewを表示する前のイベント
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(true)
+        
+        // 画面サイズを設定する
+        setSize()
+        // 表示テキストサイズを変更する
+        
         
         // centralManagerのデリゲートをセットする
         print("centralManagerDelegate set")
@@ -206,7 +220,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return false
     }
     
-    // textview移動のNotificationを設定する関数
+    // textviewサイズ変換のNotificationを設定する関数
     func configureObserver() {
         print("--- configureObserver ---")
         // キーボード出現の検知
@@ -217,7 +231,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         notification.addObserver(self, selector: #selector(onOrientationChange(notification:)), name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
     }
     
-    // textview移動のNotificationを削除する関数
+    // textviewサイズ変換のNotificationを削除する関数
     func removeObserver() {
         print("--- removeObserver ---")
         notification.removeObserver(self)
@@ -228,16 +242,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- keyboardWillShow ---")
         // キーボードの高さを取得する
         let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
-        print("keyboardHeight : \(keyboardHeight)")
         // textviewの高さを変更する
          textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
         // スクロールする
         scrollToButtom()
-        
-        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
-        print("rowSize : \(row)")
-        let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!))
-        print("columnSize : \(column)")
+        // 画面サイズを設定する
+        setSize()
     }
     
     // キーボードが消えるときに画面を戻す関数
@@ -247,20 +257,23 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - textview.frame.origin.y))
         // スクロールする
         scrollToButtom()
-        
-        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
-        print("rowSize : \(row)")
-        let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!))
-        print("columnSize : \(column)")
+        // 画面サイズを設定する
+        setSize()
     }
     
     // 画面が回転したときに呼ばれる関数
     @objc func onOrientationChange(notification: Notification?) {
         print("--- onOrientationChange ---")
+        // 画面サイズを設定する
+        setSize()
         // indicatorを表示しているとき
         if appDelegate.indicator.isShow {
             // 再表示
             appDelegate.indicator.show(controller: self)
+            // トーストしているとき
+            if toast == true {
+                showToast(message: tempToastMessage)
+            }
         }
     }
     
@@ -345,7 +358,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // トースト出力関数
     // message : トーストする文字列
     func showToast(message: String) {
+        // トースト開始を知らせる
+        toast = true
+        // トーストメッセージを記憶する
+        tempToastMessage = message
+        // ラベルを上から1/4の高さ中央に配置する
         let toastLabel = UILabel(frame: CGRect(x: self.view.frame.size.width/2 - 150, y: self.view.frame.size.height/4, width: 300, height: 35))
+        // ラベルの設定
         toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
         toastLabel.textColor = UIColor.white
         toastLabel.textAlignment = .center;
@@ -354,12 +373,50 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         toastLabel.alpha = 1.0
         toastLabel.layer.cornerRadius = 10;
         toastLabel.clipsToBounds  =  true
+        // ラベルをViewに追加する
         self.view.addSubview(toastLabel)
+        // ラベルを徐々に薄くする
         UIView.animate(withDuration: 4.0, delay: 0.1, options: .curveEaseOut, animations: {
             toastLabel.alpha = 0.0
         }, completion: {(isCompleted) in
+            // 終了したらラベルを削除する
             toastLabel.removeFromSuperview()
+            // トースト終了を知らせる
+            self.toast = false
         })
+    }
+    
+    // 画面サイズを設定する関数
+    func setSize() {
+        // 最大桁数
+        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
+        // 最大行数
+        let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!))
+        print("rowSize : \(row)")
+        print("columnSize : \(column)")
+        // 記憶する
+        viewSize = [row, column]
+        // 表示テキストサイズを変更する
+        createDispText()
+    }
+    
+    // 表示テキストの大きさを変更する関数
+    func createDispText() {
+        print("--- createDispText ---")
+        var display = [[textAttr]]()
+        // 画面サイズの行数だけ繰り返す
+        for row in 0..<viewSize[0] {
+            // 画面サイズの桁数だけ追加する
+            display.append([textAttr(char: " ", color: .black)])
+            for _ in 0..<viewSize[1] - 1 {
+                display[row].append(textAttr(char: " ", color: .black))
+            }
+            
+        }
+        // 表示テキスト変数に代入する
+        displayText = display
+        
+        print("dispCount : [\(displayText.count), \(displayText[0].count)]")
     }
     
     /* キーボード追加ボタンイベント */
@@ -768,160 +825,163 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         //  読み込みデータの取り出し
         let data = characteristic.value
-        let dataString = String(data: data!, encoding: .utf8)
+        var dataString = String(data: data!, encoding: .utf8)
         
         print("dataString:\(String(describing: dataString))")
         
-        // 複数文字届いたとき
-        if dataString!.count > 1 {
-            return
-        }
-       
-        // \0(nil)のとき
-        if dataString == nil {
-            return
-        }
-        // ASCIIコード外のとき
-        else if !dataString!.isAlphanumeric(dataString!) {
-            return
-        }
-        // エスケープシーケンス のとき
-        else if escSeq > 0 {
-            switch escSeq {
-            // シーケンス一文字目
-            case 1:
-                // 正しいシーケンスのとき
-                if dataString! == "[" {
-                    escSeq = 2
-                }
-                    // シーケンスではなかったとき
-                else {
-                    print("NO ESC_SEQ")
-                    escSeq = 0
-                }
-            // シーケンス二文字目
-            case 2:
-                // 正しいシーケンスのとき
-                if dataString!.isNumeric(dataString!) {
-                    // 変位を記憶する
-                    escDisplace[0] = Int(dataString!)!
-                    escSeq = 3
-                }
-                    // シーケンスではなかったとき
-                else {
-                    print("NO ESC_SEQ")
-                    escSeq = 0
-                }
-            // シーケンス三文字目
-            case 3:
-                // 複数桁の数値のとき
-                if dataString!.isNumeric(dataString!) {
-                    // 変位に追加する
-                    escDisplace[0] = escDisplace[0] * 10 + Int(dataString!)!
-                    break
-                }
-                switch dataString! {
-                // 正しいシーケンスのとき
-                case "A":
-                    escUp(n: escDisplace[0])
-                    escSeq = 0
-                case "B":
-                    escDown(n: escDisplace[0])
-                    escSeq = 0
-                case "C":
-                    escRight(n: escDisplace[0])
-                    escSeq = 0
-                case "D":
-                    escLeft(n: escDisplace[0])
-                    escSeq = 0
-                case "E":
-                    escDownTop(n: escDisplace[0])
-                    escSeq = 0
-                case "F":
-                    escUpTop(n: escDisplace[0])
-                    escSeq = 0
-                case "G":
-                    escRoot(n: cursor[0], m: escDisplace[0])
-                    escSeq = 0
-                case ";":
-                    escSeq = 4
-                case "m":
-                    if escDisplace[0] >= 30 && escDisplace [0] <= 37 {
-                        changeColor(color: escDisplace[0])
+        // 複数文字届いたときは一字ずつ処理する
+        var tempSaveData = dataString!
+        for _ in 0..<tempSaveData.count {
+            // 最初の一文字だけ取り出す
+            dataString = String(tempSaveData.prefix(1))
+            tempSaveData = String(tempSaveData.suffix(tempSaveData.count - 1))
+            
+            // \0(nil)のとき
+            if dataString == nil {
+                return
+            }
+            // ASCIIコード外のとき
+            else if !dataString!.isAlphanumeric(dataString!) {
+                return
+            }
+            // エスケープシーケンス のとき
+            else if escSeq > 0 {
+                switch escSeq {
+                // シーケンス一文字目
+                case 1:
+                    // 正しいシーケンスのとき
+                    if dataString! == "[" {
+                        escSeq = 2
                     }
+                        // シーケンスではなかったとき
                     else {
                         print("NO ESC_SEQ")
+                        escSeq = 0
                     }
-                    escSeq = 0
-                // シーケンスではなかったとき
-                default:
-                    print("NO ESC_SEQ")
-                    escSeq = 0
-                }
-            // シーケンス四文字目
-            case 4:
-                // 正しいシーケンスのとき
-                if dataString!.isNumeric(dataString!) {
-                    // 変位を記憶する
-                    escDisplace[1] = Int(dataString!)!
-                    escSeq = 5
-                }
-                // シーケンスではなかったとき
-                else {
-                    print("NO ESC_SEQ")
-                    escSeq = 0
-                }
-            // シーケンス五文字目
-            case 5:
-                // 複数桁の数値のとき
-                if dataString!.isNumeric(dataString!) {
-                    // 変位に追加する
-                    escDisplace[1] = escDisplace[1] * 10 + Int(dataString!)!
-                    break
-                }
-                // 正しいシーケンスのとき
-                if dataString! == "H" || dataString! == "f" {
-                    escRoot(n: escDisplace[0], m: escDisplace[1])
-                    escSeq = 0
-                }
+                // シーケンス二文字目
+                case 2:
+                    // 正しいシーケンスのとき
+                    if dataString!.isNumeric(dataString!) {
+                        // 変位を記憶する
+                        escDisplace[0] = Int(dataString!)!
+                        escSeq = 3
+                    }
+                        // シーケンスではなかったとき
+                    else {
+                        print("NO ESC_SEQ")
+                        escSeq = 0
+                    }
+                // シーケンス三文字目
+                case 3:
+                    // 複数桁の数値のとき
+                    if dataString!.isNumeric(dataString!) {
+                        // 変位に追加する
+                        escDisplace[0] = escDisplace[0] * 10 + Int(dataString!)!
+                        break
+                    }
+                    switch dataString! {
+                    // 正しいシーケンスのとき
+                    case "A":
+                        escUp(n: escDisplace[0])
+                        escSeq = 0
+                    case "B":
+                        escDown(n: escDisplace[0])
+                        escSeq = 0
+                    case "C":
+                        escRight(n: escDisplace[0])
+                        escSeq = 0
+                    case "D":
+                        escLeft(n: escDisplace[0])
+                        escSeq = 0
+                    case "E":
+                        escDownTop(n: escDisplace[0])
+                        escSeq = 0
+                    case "F":
+                        escUpTop(n: escDisplace[0])
+                        escSeq = 0
+                    case "G":
+                        escRoot(n: cursor[0], m: escDisplace[0])
+                        escSeq = 0
+                    case ";":
+                        escSeq = 4
+                    case "m":
+                        if escDisplace[0] >= 30 && escDisplace [0] <= 37 {
+                            changeColor(color: escDisplace[0])
+                        }
+                        else {
+                            print("NO ESC_SEQ")
+                        }
+                        escSeq = 0
                     // シーケンスではなかったとき
-                else {
-                    print("NO ESC_SEQ")
-                    escSeq = 0
+                    default:
+                        print("NO ESC_SEQ")
+                        escSeq = 0
+                    }
+                // シーケンス四文字目
+                case 4:
+                    // 正しいシーケンスのとき
+                    if dataString!.isNumeric(dataString!) {
+                        // 変位を記憶する
+                        escDisplace[1] = Int(dataString!)!
+                        escSeq = 5
+                    }
+                    // シーケンスではなかったとき
+                    else {
+                        print("NO ESC_SEQ")
+                        escSeq = 0
+                    }
+                // シーケンス五文字目
+                case 5:
+                    // 複数桁の数値のとき
+                    if dataString!.isNumeric(dataString!) {
+                        // 変位に追加する
+                        escDisplace[1] = escDisplace[1] * 10 + Int(dataString!)!
+                        break
+                    }
+                    // 正しいシーケンスのとき
+                    if dataString! == "H" || dataString! == "f" {
+                        escRoot(n: escDisplace[0], m: escDisplace[1])
+                        escSeq = 0
+                    }
+                        // シーケンスではなかったとき
+                    else {
+                        print("NO ESC_SEQ")
+                        escSeq = 0
+                    }
+                default: break
                 }
-            default: break
             }
-        }
-        // エスケープのとき
-        else if dataString! == "\u{1b}" {
-            escSeq = 1
-        }
-        // それ以外のとき
-        else {
-            // textViewに読み込みデータを書き込む
-            writeTextView(dataString!)
-            
-            // カーソルをずらす
-            // 改行のとき
-            if dataString! == "\n" || dataString! == "\r" {
-                cursor[0] = cursor[0] + 1
-                cursor[1] = 1
+            // エスケープのとき
+            else if dataString! == "\u{1b}" {
+                escSeq = 1
             }
-            // BS(削除)のとき
-            else if dataString! == "\u{08}" {
-                if cursor[1] > 1 {
-                    cursor[1] = cursor[1] - 1
-                }
-            }
+            // それ以外のとき
             else {
-                cursor[1] = cursor[1] + dataString!.count
+                // textViewに読み込みデータを書き込む
+                writeTextView(dataString!)
+                
+                // カーソルをずらす
+                // 改行のとき
+                if dataString! == "\n" || dataString! == "\r" {
+                    cursor[0] = cursor[0] + 1
+                    cursor[1] = 1
+                }
+                // BS(削除)のとき
+                else if dataString! == "\u{08}" {
+                    if cursor[1] > 1 {
+                        cursor[1] = cursor[1] - 1
+                    }
+                }
+                else {
+                    cursor[1] = cursor[1] + dataString!.count
+                }
+                
+                // カーソルを表示する
+                viewCursor()
             }
-            
-            // カーソルを表示する
-            viewCursor()
+            // 画面をスクロールする
+            scrollToButtom()
         }
-        // 画面をスクロールする
-        scrollToButtom()
     }
     
     // textview内のカーソル位置に文字を書き込む関数
@@ -1216,7 +1276,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // テキストの記憶を初期化する
         allTextAttr = [[textAttr(char: "_", color: currColor)]]
         viewChar(allTextAttr)
+        // トースト状態を初期化する
+        toast = false
+        // トーストメッセージを初期化する
+        tempToastMessage = ""
         
+        // カーソル基底を初期化する
+        base = 0
         // カーソル位置を初期化する
         cursor = [1, 1]
         // カーソル表示

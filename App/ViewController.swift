@@ -216,6 +216,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
          textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
         // スクロールする
         scrollToButtom()
+        
+        let line = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / textview.font!.lineHeight + 1)
+        print("max lines : \(line)")
     }
     
     // キーボードが消えるときに画面を戻す関数
@@ -225,6 +228,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - textview.frame.origin.y))
         // スクロールする
         scrollToButtom()
+        
+        let line = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / textview.font!.lineHeight + 1)
+        print("max lines : \(line)")
     }
     
     // 画面が回転したときに呼ばれる関数

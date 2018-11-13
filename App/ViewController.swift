@@ -87,12 +87,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // エスケープシーケンス変位記憶変数
     var escDisplace = [0, 0]
     
+    // カーソルの基底位置を記憶する変数
+    var base = 0
     // カーソル位置記憶変数
     var cursor = [1, 1]
     // テキスト保存変数
     var allTextAttr = [[textAttr]]()
     // 色の一時記憶変数
-    var currColor: UIColor = UIColor.black
+    var currColor = UIColor.black
+    // 画面サイズ記憶変数
+    var viewSize = [0, 0]
+    // 表示テキスト変数
+    var displayText = [[textAttr]]()
     
     // メニュー表示を制御する変数
     var tapCount = 0
@@ -137,6 +143,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // viewを表示する前のイベント
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(true)
+        
+        // 画面サイズを設定する
+        setSize()
+        // 表示テキストサイズを変更する
+        
         
         // centralManagerのデリゲートをセットする
         print("centralManagerDelegate set")
@@ -209,7 +220,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return false
     }
     
-    // textview移動のNotificationを設定する関数
+    // textviewサイズ変換のNotificationを設定する関数
     func configureObserver() {
         print("--- configureObserver ---")
         // キーボード出現の検知
@@ -220,7 +231,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         notification.addObserver(self, selector: #selector(onOrientationChange(notification:)), name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
     }
     
-    // textview移動のNotificationを削除する関数
+    // textviewサイズ変換のNotificationを削除する関数
     func removeObserver() {
         print("--- removeObserver ---")
         notification.removeObserver(self)
@@ -235,11 +246,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
          textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
         // スクロールする
         scrollToButtom()
-        
-        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
-        print("rowSize : \(row)")
-        let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!))
-        print("columnSize : \(column)")
+        // 画面サイズを設定する
+        setSize()
     }
     
     // キーボードが消えるときに画面を戻す関数
@@ -249,16 +257,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - textview.frame.origin.y))
         // スクロールする
         scrollToButtom()
-        
-        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
-        print("rowSize : \(row)")
-        let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!))
-        print("columnSize : \(column)")
+        // 画面サイズを設定する
+        setSize()
     }
     
     // 画面が回転したときに呼ばれる関数
     @objc func onOrientationChange(notification: Notification?) {
         print("--- onOrientationChange ---")
+        // 画面サイズを設定する
+        setSize()
         // indicatorを表示しているとき
         if appDelegate.indicator.isShow {
             // 再表示
@@ -377,6 +384,39 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // トースト終了を知らせる
             self.toast = false
         })
+    }
+    
+    // 画面サイズを設定する関数
+    func setSize() {
+        // 最大桁数
+        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
+        // 最大行数
+        let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!))
+        print("rowSize : \(row)")
+        print("columnSize : \(column)")
+        // 記憶する
+        viewSize = [row, column]
+        // 表示テキストサイズを変更する
+        createDispText()
+    }
+    
+    // 表示テキストの大きさを変更する関数
+    func createDispText() {
+        print("--- createDispText ---")
+        var display = [[textAttr]]()
+        // 画面サイズの行数だけ繰り返す
+        for row in 0..<viewSize[0] {
+            // 画面サイズの桁数だけ追加する
+            display.append([textAttr(char: " ", color: .black)])
+            for _ in 0..<viewSize[1] - 1 {
+                display[row].append(textAttr(char: " ", color: .black))
+            }
+            
+        }
+        // 表示テキスト変数に代入する
+        displayText = display
+        
+        print("dispCount : [\(displayText.count), \(displayText[0].count)]")
     }
     
     /* キーボード追加ボタンイベント */
@@ -1241,6 +1281,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // トーストメッセージを初期化する
         tempToastMessage = ""
         
+        // カーソル基底を初期化する
+        base = 0
         // カーソル位置を初期化する
         cursor = [1, 1]
         // カーソル表示

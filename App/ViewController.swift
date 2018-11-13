@@ -42,6 +42,23 @@ extension String {
         }
         return true
     }
+    // 文字列の高さを取得する関数
+    // font : 使用フォント
+    // 返り値 : 文字列の高さ(CGFloat型)
+    func getStringHeight(_ font: UIFont) -> CGFloat {
+        let attribute = [NSAttributedStringKey.font: font]
+        let size = self.size(withAttributes: attribute)
+        return size.height
+    }
+    // 文字列の横幅を取得する関数
+    // font : 使用フォント
+    // 返り値 : 文字列の横幅(CGFloat型)
+    func getStringWidth(_ font: UIFont) -> CGFloat {
+        let attribute = [NSAttributedStringKey.font: font]
+        let size = self.size(withAttributes: attribute)
+        return size.width
+        
+    }
 }
 
 // 文字と色を保存をする構造体
@@ -217,8 +234,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // スクロールする
         scrollToButtom()
         
-        let line = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / textview.font!.lineHeight + 1)
-        print("max lines : \(line)")
+        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
+        print("rowSize : \(row)")
+        let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!))
+        print("columnSize : \(column)")
     }
     
     // キーボードが消えるときに画面を戻す関数
@@ -229,8 +248,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // スクロールする
         scrollToButtom()
         
-        let line = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / textview.font!.lineHeight + 1)
-        print("max lines : \(line)")
+        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
+        print("rowSize : \(row)")
+        let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!))
+        print("columnSize : \(column)")
     }
     
     // 画面が回転したときに呼ばれる関数

@@ -97,8 +97,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var currColor = UIColor.black
     // 画面サイズ記憶変数
     var viewSize = [0, 0]
-    // 表示テキスト変数
-    var displayText = [[textAttr]]()
+    
+    // 画面スクロール制御変数
+    var prevScroll = CGPoint(x: 0, y: 0)
     
     // メニュー表示を制御する変数
     var tapCount = 0
@@ -117,8 +118,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // viewが読み込まれたときのイベント
     override func viewDidLoad() {
+        print("--- viewDidLoad ---")
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        // 画面スクロール用のイベントを登録する
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(self.pan(sender:)))
+        self.view.addGestureRecognizer(pan)
         
         // メニューを隠す
         hideMenu(duration: 0.0)
@@ -133,21 +139,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // textviewのデリゲートをセット
         textview.delegate = self
         
-        // textviewの初期化
-        clear()
-        
         // インスタンスの生成および初期化
         appDelegate.centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
     }
     
     // viewを表示する前のイベント
     override func viewWillAppear(_ animated: Bool) {
+        print("--- viewWillAppear ---")
         super.viewWillAppear(true)
         
         // 画面サイズを設定する
         setSize()
-        // 表示テキストサイズを変更する
-        
         
         // centralManagerのデリゲートをセットする
         print("centralManagerDelegate set")
@@ -155,10 +157,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // Notificationを設定する
         configureObserver()
+        
+        // textviewの初期化
+        clear()
     }
     
     // viewが消える前のイベント
     override func viewWillDisappear(_ animated: Bool) {
+        print("--- viewWillDisappear ---")
         super.viewWillDisappear(true)
         
         // Notificationを削除する
@@ -166,6 +172,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     override func didReceiveMemoryWarning() {
+        print("--- didReceivememoryWarning ---")
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
@@ -183,6 +190,32 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @objc func keyboardDown() {
         print("--- keyboardDown ---")
         self.view.endEditing(true)
+    }
+    
+    // 画面をスクロールさせる関数
+    @objc func pan(sender: UIPanGestureRecognizer) {
+        print("--- pan ---")
+        // 移動後の相対位置を取得する
+        let location = sender.translation(in: self.view)
+        print("location : \(location)")
+        // 画面を上にスワイプしたとき
+        if prevScroll.y > location.y {
+            print("up Swipe")
+            if base < allTextAttr.count - 1 {
+                base += 1
+                viewCursor()
+            }
+        }
+        // 画面を下にスワイプしたとき
+        else if location.y > prevScroll.y {
+            print("down Swipe")
+            if base > 0 {
+                base -= 1
+                viewCursor()
+            }
+        }
+        // 位置を変更する
+        prevScroll = location
     }
     
     // textViewの入力値を取得し、カーソル位置に追記する関数
@@ -285,9 +318,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         tapCount = (tapCount + 1) % 2
         print("tapCount : \(tapCount)")
         switch tapCount {
+        // メニューが表示されているとき
         case 0:
             // メニューを非表示状態にする
             hideMenu(duration: 0.7)
+        // メニューが表示されていないとき
         case 1:
             // メニューを表示状態にする
             showMenu(duration: 0.7)
@@ -388,35 +423,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 画面サイズを設定する関数
     func setSize() {
-        // 最大桁数
-        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
+        print("--- setSize ---")
         // 最大行数
+        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
+        // 最大桁数
         let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!))
         print("rowSize : \(row)")
         print("columnSize : \(column)")
         // 記憶する
         viewSize = [row, column]
-        // 表示テキストサイズを変更する
-        createDispText()
-    }
-    
-    // 表示テキストの大きさを変更する関数
-    func createDispText() {
-        print("--- createDispText ---")
-        var display = [[textAttr]]()
-        // 画面サイズの行数だけ繰り返す
-        for row in 0..<viewSize[0] {
-            // 画面サイズの桁数だけ追加する
-            display.append([textAttr(char: " ", color: .black)])
-            for _ in 0..<viewSize[1] - 1 {
-                display[row].append(textAttr(char: " ", color: .black))
-            }
-            
-        }
-        // 表示テキスト変数に代入する
-        displayText = display
-        
-        print("dispCount : [\(displayText.count), \(displayText[0].count)]")
     }
     
     /* キーボード追加ボタンイベント */
@@ -965,6 +980,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if dataString! == "\n" || dataString! == "\r" {
                     cursor[0] = cursor[0] + 1
                     cursor[1] = 1
+                    // カーソルが基底から数えて最大行数を超えたとき
+                    if cursor[0] > base + viewSize[0] {
+                        base  += 1
+                    }
                 }
                 // BS(削除)のとき
                 else if dataString! == "\u{08}" {
@@ -993,7 +1012,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
         viewChar(allTextAttr)
         
-        // 改行なら次の行を準備とカーソル文字を削除して返る
+        // 改行なら次の行の準備とカーソル文字の削除をして返る
         if string == "\r" || string == "\n" {
             print("before row : \(allTextAttr[cursor[0] - 1])")
             // 次のテキスト記憶を準備
@@ -1098,8 +1117,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         var attributes: [NSAttributedStringKey : Any]
         var char: NSMutableAttributedString
         
-        // textviewの行数だけ繰り返す
-        for row in 0..<allTextAttr.count {
+        // 基底位置から最大行数またはテキスト行数だけ繰り返す
+        var row = base
+        print("row : \(row)")
+        print("allTextAttr.count : \(allTextAttr.count)")
+        print("viewSize[0] : \(viewSize[0])")
+        while row < base + viewSize[0] && row < allTextAttr.count {
+            // 行の文字数が最大数よりも多いとき
+            if allTextAttr[row].count > viewSize[1] {
+                // 桁数を増やす
+                row += 1
+            }
             // 各行の文字数だけ繰り返す
             for column in 0..<allTextAttr[row].count {
                 // 背景色を設定する
@@ -1124,6 +1152,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             attributes = [.backgroundColor : UIColor.white, .foregroundColor : UIColor.white]
             char = NSMutableAttributedString(string: "\n", attributes: attributes)
             text.append(char)
+            // 次の行の準備
+            row += 1
+            print("row : \(row)")
         }
         
         // 色付きのテキストを設定する
@@ -1292,14 +1323,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // textviewを最下までスクロールする関数
     func scrollToButtom() {
         textview.selectedRange = NSRange(location: textview.text.count, length: 0)
-        textview.isScrollEnabled = true
         
         let scrollY = textview.contentSize.height - textview.bounds.height
         let scrollPoint = CGPoint(x: 0, y: scrollY > 0 ? scrollY : 0)
         textview.setContentOffset(scrollPoint, animated: false)
     }
     
-    // デバッグ用関数 (非確実的動作)
+    // デバッグ用関数 (不確実的動作)
     func viewChar(_ text: [[textAttr]]) {
         print("--- viewChar ---")
         let allTextAttr = text

@@ -205,9 +205,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 画面を上にスワイプしたとき
         if prevScroll.y > location.y {
             print("up Swipe")
-            print("allTextAttr.count : \(allTextAttr.count)")
-            print("viewSize[0] : \(viewSize[0])")
-            print("base : \(base)")
             // 下にスクロールできるとき
             if base < cursor[0] - 1 {
                 // 基底位置を下げる
@@ -287,7 +284,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
          textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
-        base = cursor[0] - 1
+        // キーボードの高さだけ基底位置を下げる
+        base += Int((keyboardHeight + 1) / " ".getStringHeight(textview.font!))
+        // 基底位置を下げすぎたとき
+        if base > allTextAttr.count - 1 {
+            base = allTextAttr.count - 1
+        }
         // 反映させる
         viewCursor()
     }
@@ -299,6 +301,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
+        // キーボードの高さを取得する
+        let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
+        // キーボードの高さだけ基底位置を上げる
+        base -= Int(keyboardHeight / " ".getStringHeight(textview.font!))
+        // 基底位置を上げすぎたとき
+        if base < 0 {
+            base = 0
+        }
         // 反映させる
         viewCursor()
     }
@@ -843,6 +853,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         var dataString = String(data: data!, encoding: .utf8)
         
         print("dataString:\(String(describing: dataString))")
+        // \0(nil)のとき
+        if dataString == nil {
+            return
+        }
         
         // 複数文字届いたときは一字ずつ処理する
         var tempSaveData = dataString!
@@ -851,12 +865,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             dataString = String(tempSaveData.prefix(1))
             tempSaveData = String(tempSaveData.suffix(tempSaveData.count - 1))
             
-            // \0(nil)のとき
-            if dataString == nil {
-                return
-            }
             // ASCIIコード外のとき
-            else if !dataString!.isAlphanumeric(dataString!) {
+            if !dataString!.isAlphanumeric(dataString!) {
                 return
             }
             // エスケープシーケンス のとき
@@ -1024,6 +1034,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 }
                 // BS(削除)のとき
                 else if dataString! == "\u{08}" {
+                    print("cursor : \(cursor)")
                     // カーソル前に文字があるとき
                     if cursor[1] > 1 {
                         cursor[1] = cursor[1] - 1
@@ -1032,13 +1043,28 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     else {
                         // カーソル上に行があるとき
                         if cursor[0] > 1 {
-                            // 一つ上の行の最後に移動
+                            // 一つ上の行に移動させる
                             cursor[0] -= 1
-                            cursor[1] = allTextAttr[cursor[0] - 1].count + 1
-                            // 最後の行を消す
-                            allTextAttr.removeLast()
-                            // カーソル文字を付け足す
-                            allTextAttr[allTextAttr.count - 1].append(textAttr(char: "_", color: currColor))
+                            print("base : \(base)")
+                            print("cursor[0] : \(cursor[0])")
+                            // カーソル行が表示範囲から外れたとき
+                            if cursor[0] == base {
+                                print("out of range")
+                                base = cursor[0] - 1
+                            }
+                            print("prev : \(allTextAttr[cursor[0] - 1])")
+                            // カーソル以降の文字列を上にずらす
+                            if allTextAttr[cursor[0] - 1][0].char == "" {
+                                allTextAttr[cursor[0] - 1] = allTextAttr[cursor[0]]
+                            }
+                            else {
+                                allTextAttr[cursor[0] - 1] += allTextAttr[cursor[0]]
+                            }
+                            print("after : \(allTextAttr[cursor[0] - 1])")
+                            // カーソルを行末に移動させる
+                            cursor[1] = allTextAttr[cursor[0] - 1].count
+                            // カーソルのあった行を消す
+                            allTextAttr.remove(at: cursor[0])
                         }
                     }
                 }
@@ -1046,10 +1072,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 else {
                     cursor[1] = cursor[1] + dataString!.count
                 }
-                
-                // カーソルを表示する
-                viewCursor()
             }
+            // カーソルを表示する
+            viewCursor()
         }
     }
     

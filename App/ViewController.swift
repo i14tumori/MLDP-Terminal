@@ -88,7 +88,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var escDisplace = [0, 0]
     
     // カーソルの基底位置を記憶する変数
-    var base = 0
+    var viewBase = 0
+    // 文字入力の規定位置を記憶する変数
+    var writeBase = 0
     // カーソル位置記憶変数
     var cursor = [1, 1]
     // テキスト保存変数
@@ -206,9 +208,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if prevScroll.y > location.y {
             print("up Swipe")
             // 下にスクロールできるとき
-            if base < allTextAttr.count - viewSize[0] {
+            if viewBase < allTextAttr.count - viewSize[0] {
                 // 基底位置を下げる
-                base += 1
+                viewBase += 1
                 viewCursor()
             }
         }
@@ -216,9 +218,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         else if location.y > prevScroll.y {
             print("down Swipe")
             // 上にスクロールできるとき
-            if base > 0 {
+            if viewBase > 0 {
                 // 基底位置を上げる
-                base -= 1
+                viewBase -= 1
                 viewCursor()
             }
         }
@@ -333,7 +335,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             showMenu(duration: 0.7)
         default: break
         }
-        print("base : \(base)")
+        print("base : \(viewBase)")
     }
     
     // メニューを隠す関数
@@ -897,9 +899,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
-                        print("base : \(base)")
-                        if n >= cursor[0] - base {
-                            n = cursor[0] - base - 1
+                        print("base : \(viewBase)")
+                        if n >= cursor[0] - viewBase {
+                            n = cursor[0] - viewBase - 1
                         }
                         escUp(n: n)
                         escSeq = 0
@@ -907,10 +909,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
-                        print("base : \(base)")
+                        print("base : \(viewBase)")
                         print("viewSize[0] : \(viewSize[0])")
-                        if n  > (base + viewSize[0]) - cursor[0] {
-                            n = (base + viewSize[0]) - cursor[0]
+                        if n  > (viewBase + viewSize[0]) - cursor[0] {
+                            n = (viewBase + viewSize[0]) - cursor[0]
                         }
                         escDown(n: n)
                         escSeq = 0
@@ -924,10 +926,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
-                        print("base : \(base)")
+                        print("base : \(viewBase)")
                         print("viewSize[0] : \(viewSize[0])")
-                        if n  > (base + viewSize[0]) - cursor[0] {
-                            n = (base + viewSize[0]) - cursor[0]
+                        if n  > (viewBase + viewSize[0]) - cursor[0] {
+                            n = (viewBase + viewSize[0]) - cursor[0]
                         }
                         escDownTop(n: n)
                         escSeq = 0
@@ -935,9 +937,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
-                        print("base : \(base)")
-                        if n >= cursor[0] - base {
-                            n = cursor[0] - base - 1
+                        print("base : \(viewBase)")
+                        if n >= cursor[0] - viewBase {
+                            n = cursor[0] - viewBase - 1
                         }
                         escUpTop(n: n)
                         escSeq = 0
@@ -984,12 +986,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     if dataString! == "H" || dataString! == "f" {
                         var n = escDisplace[0]
                         print("n : \(n)")
-                        print("base : \(base)")
+                        print("base : \(viewBase)")
                         print("viewSize[0] : \(viewSize[0])")
                         if n > viewSize[0] {
                             n = viewSize[0]
                         }
-                        escRoot(n: n + base, m: escDisplace[1])
+                        escRoot(n: n + viewBase, m: escDisplace[1])
                         escSeq = 0
                     }
                         // シーケンスではなかったとき
@@ -1015,8 +1017,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     cursor[0] = cursor[0] + 1
                     cursor[1] = 1
                     // カーソルが基底から数えて最大行数を超えたとき
-                    if cursor[0] > base + viewSize[0] {
-                        base += 1
+                    if cursor[0] > viewBase + viewSize[0] {
+                        viewBase += 1
+                        writeBase = viewBase
                     }
                 }
                 // BS(削除)のとき
@@ -1032,15 +1035,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         if cursor[0] > 1 {
                             // 一つ上の行に移動させる
                             cursor[0] -= 1
-                            print("base : \(base)")
+                            print("base : \(viewBase)")
                             print("cursor[0] : \(cursor[0])")
                             // カーソル行が表示範囲から外れたとき
-                            if cursor[0] == base {
+                            if cursor[0] == viewBase {
                                 print("out of range")
-                                base = cursor[0] - viewSize[0]
+                                viewBase = cursor[0] - viewSize[0]
+                                writeBase = viewBase
                                 // 基底位置の上限を定める
-                                if base < 0 {
-                                    base = 0
+                                if viewBase < 0 {
+                                    viewBase = 0
                                 }
                             }
                             // カーソル以降の文字列を上にずらす
@@ -1164,7 +1168,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // カーソルを表示する関数
-    func viewCursor() {
+    func viewCursor(_ type: Int = 0) {
         print("--- viewCursor ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
         
@@ -1173,12 +1177,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         var char: NSMutableAttributedString
         
         // 基底位置から最大行数またはテキスト行数だけ繰り返す
-        var row = base
+        var row: Int
+        switch type {
+        case 0:
+            row = viewBase
+        case 1:
+            row = writeBase
+        default:
+            print("type error")
+            return
+        }
         print("row : \(row)")
         print("allTextAttr.count : \(allTextAttr.count)")
         print("viewSize[0] : \(viewSize[0])")
         print("viewSize[1] : \(viewSize[1])")
-        while row < base + viewSize[0] && row < allTextAttr.count {
+        while row < viewBase + viewSize[0] && row < allTextAttr.count {
             // 各行の文字数だけ繰り返す
             for column in 0..<allTextAttr[row].count {
                 // 背景色を設定する
@@ -1351,7 +1364,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         tempToastMessage = ""
         
         // カーソル基底を初期化する
-        base = 0
+        viewBase = 0
+        writeBase = 0
         // カーソル位置を初期化する
         cursor = [1, 1]
         // カーソル表示
@@ -1363,17 +1377,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソルの下側に十分な行がないとき
         if allTextAttr.count - cursor[0] < viewSize[0] / 2 {
             // 最下にカーソル行が来るようにする
-            base = allTextAttr.count - viewSize[0]
+            viewBase = allTextAttr.count - viewSize[0]
         }
         // カーソルの下側に十分な行があるとき
         else {
             // 中央にカーソル行が来るようにする
-            base = cursor[0] - (viewSize[0] / 2)
+            viewBase = cursor[0] - (viewSize[0] / 2)
         }
         
         // 基底位置の上限を定める
-        if base < 0 {
-            base = 0
+        if viewBase < 0 {
+            viewBase = 0
         }
         
         // 反映させる

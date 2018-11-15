@@ -206,7 +206,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if prevScroll.y > location.y {
             print("up Swipe")
             // 下にスクロールできるとき
-            if base < cursor[0] - 1 {
+            if base < allTextAttr.count - 1 {
                 // 基底位置を下げる
                 base += 1
                 viewCursor()
@@ -347,9 +347,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             showMenu(duration: 0.7)
         default: break
         }
-        
-        print("checkText :\n\(textview.text ?? "")")
-        
+        print("base : \(base)")
     }
     
     // メニューを隠す関数
@@ -1050,14 +1048,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             // カーソル行が表示範囲から外れたとき
                             if cursor[0] == base {
                                 print("out of range")
-                                base = cursor[0] - 1
+                                base = cursor[0] - viewSize[0]
+                                if base < 0 {
+                                    base = 0
+                                }
                             }
                             print("prev : \(allTextAttr[cursor[0] - 1])")
                             // カーソル以降の文字列を上にずらす
+                            // 空文字のとき
                             if allTextAttr[cursor[0] - 1][0].char == "" {
+                                // 書き換える
                                 allTextAttr[cursor[0] - 1] = allTextAttr[cursor[0]]
                             }
+                            // 空文字ではないとき
                             else {
+                                // 追記する
                                 allTextAttr[cursor[0] - 1] += allTextAttr[cursor[0]]
                             }
                             print("after : \(allTextAttr[cursor[0] - 1])")
@@ -1184,6 +1189,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("row : \(row)")
         print("allTextAttr.count : \(allTextAttr.count)")
         print("viewSize[0] : \(viewSize[0])")
+        print("viewSize[1] : \(viewSize[1])")
         while row < base + viewSize[0] && row < allTextAttr.count {
             // 各行の文字数だけ繰り返す
             for column in 0..<allTextAttr[row].count {
@@ -1362,5 +1368,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         cursor = [1, 1]
         // カーソル表示
         viewCursor()
+    }
+    
+    // デバッグ用関数 (非確実的動作)
+    func viewChar(_ text: [[textAttr]]) {
+        print("--- viewChar ---")
+        let allTextAttr = text
+        var text = [""]
+        for row in 0..<allTextAttr.count {
+            text.append("")
+            for column in 0..<allTextAttr[row].count {
+                text[text.count - 1].append(allTextAttr[row][column].char)
+            }
+        }
+        print(text)
     }
 }

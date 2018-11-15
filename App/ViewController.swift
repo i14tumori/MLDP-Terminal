@@ -1024,7 +1024,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     print("cursor : \(cursor)")
                     // カーソル前に文字があるとき
                     if cursor[1] > 1 {
-                        cursor[1] = cursor[1] - 1
+                        cursor[1] -= 1
                     }
                     // カーソル前に文字がないとき
                     else {
@@ -1038,11 +1038,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             if cursor[0] == base {
                                 print("out of range")
                                 base = cursor[0] - viewSize[0]
+                                // 基底位置の上限を定める
                                 if base < 0 {
                                     base = 0
                                 }
                             }
-                            print("prev : \(allTextAttr[cursor[0] - 1])")
                             // カーソル以降の文字列を上にずらす
                             // 空文字のとき
                             if allTextAttr[cursor[0] - 1][0].char == "" {
@@ -1054,7 +1054,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                                 // 追記する
                                 allTextAttr[cursor[0] - 1] += allTextAttr[cursor[0]]
                             }
-                            print("after : \(allTextAttr[cursor[0] - 1])")
                             // カーソルを行末に移動させる
                             cursor[1] = allTextAttr[cursor[0] - 1].count
                             // カーソルのあった行を消す

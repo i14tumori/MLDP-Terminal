@@ -207,7 +207,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if prevScroll.y > location.y {
             print("up Swipe")
             // 下にスクロールできるとき
-            if base < allTextAttr.count - 1 {
+            if base < allTextAttr.count - viewSize[0] {
                 // 基底位置を下げる
                 base += 1
                 viewCursor()
@@ -285,14 +285,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
          textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
-        // キーボードの高さだけ基底位置を下げる
-        base += Int((keyboardHeight + 1) / " ".getStringHeight(textview.font!))
-        // 基底位置を下げすぎたとき
-        if base > allTextAttr.count - 1 {
-            base = allTextAttr.count - 1
-        }
-        // 反映させる
-        viewCursor()
+        // カーソル位置にスクロールする
+        scrollToCursor()
     }
     
     // キーボードが消えるときに画面を戻す関数
@@ -302,16 +296,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
-        // キーボードの高さを取得する
-        let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
-        // キーボードの高さだけ基底位置を上げる
-        base -= Int(keyboardHeight / " ".getStringHeight(textview.font!))
-        // 基底位置を上げすぎたとき
-        if base < 0 {
-            base = 0
-        }
-        // 反映させる
-        viewCursor()
+        // カーソル位置にスクロールする
+        scrollToCursor()
     }
     
     // 画面が回転したときに呼ばれる関数
@@ -857,6 +843,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         
+        // カーソル位置にスクロールする
+        scrollToCursor()
+        
         // 複数文字届いたときは一字ずつ処理する
         var tempSaveData = dataString!
         for _ in 0..<tempSaveData.count {
@@ -1036,7 +1025,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     print("cursor : \(cursor)")
                     // カーソル前に文字があるとき
                     if cursor[1] > 1 {
-                        cursor[1] = cursor[1] - 1
+                        cursor[1] -= 1
                     }
                     // カーソル前に文字がないとき
                     else {
@@ -1050,11 +1039,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             if cursor[0] == base {
                                 print("out of range")
                                 base = cursor[0] - viewSize[0]
+                                // 基底位置の上限を定める
                                 if base < 0 {
                                     base = 0
                                 }
                             }
-                            print("prev : \(allTextAttr[cursor[0] - 1])")
                             // カーソル以降の文字列を上にずらす
                             // 空文字のとき
                             if allTextAttr[cursor[0] - 1][0].char == "" {
@@ -1066,7 +1055,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                                 // 追記する
                                 allTextAttr[cursor[0] - 1] += allTextAttr[cursor[0]]
                             }
-                            print("after : \(allTextAttr[cursor[0] - 1])")
                             // カーソルを行末に移動させる
                             cursor[1] = allTextAttr[cursor[0] - 1].count
                             // カーソルのあった行を消す
@@ -1368,6 +1356,28 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソル位置を初期化する
         cursor = [1, 1]
         // カーソル表示
+        viewCursor()
+    }
+    
+    // カーソル位置にスクロールする関数
+    func scrollToCursor() {
+        // カーソルの下側に十分な行がないとき
+        if allTextAttr.count - cursor[0] < viewSize[0] / 2 {
+            // 最下にカーソル行が来るようにする
+            base = allTextAttr.count - viewSize[0]
+        }
+        // カーソルの下側に十分な行があるとき
+        else {
+            // 中央にカーソル行が来るようにする
+            base = cursor[0] - (viewSize[0] / 2)
+        }
+        
+        // 基底位置の上限を定める
+        if base < 0 {
+            base = 0
+        }
+        
+        // 反映させる
         viewCursor()
     }
     

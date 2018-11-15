@@ -140,6 +140,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // textviewのデリゲートをセット
         textview.delegate = self
+        // 画面サイズを設定する
+        setSize()
+        // textviewの初期化
+        clear()
         
         // インスタンスの生成および初期化
         appDelegate.centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
@@ -150,7 +154,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- viewWillAppear ---")
         super.viewWillAppear(true)
         
-        // 画面サイズを設定する
+        // 画面サイズを再設定する
         setSize()
         
         // centralManagerのデリゲートをセットする
@@ -160,8 +164,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // Notificationを設定する
         configureObserver()
         
-        // textviewの初期化
-        clear()
     }
     
     // viewが消える前のイベント
@@ -203,8 +205,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 画面を上にスワイプしたとき
         if prevScroll.y > location.y {
             print("up Swipe")
+            print("allTextAttr.count : \(allTextAttr.count)")
+            print("viewSize[0] : \(viewSize[0])")
+            print("base : \(base)")
             // 下にスクロールできるとき
-            if base < allTextAttr.count - viewSize[0] {
+            if base < cursor[0] - 1 {
                 // 基底位置を下げる
                 base += 1
                 viewCursor()
@@ -282,8 +287,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
          textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
-        // キーボードの高さだけ基底位置を下げる
-        base += Int((keyboardHeight + 1) / " ".getStringHeight(textview.font!))
+        base = cursor[0] - 1
         // 反映させる
         viewCursor()
     }
@@ -295,10 +299,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
-        // キーボードの高さを取得する
-        let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
-        // キーボードの高さだけ基底位置を上げる
-        base -= Int(keyboardHeight / " ".getStringHeight(textview.font!))
         // 反映させる
         viewCursor()
     }
@@ -657,10 +657,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 print("char : \(allTextAttr[row][column].char)")
             }
         }
-        print("allText count")
-        for row in 0..<allTextAttr.count {
-            print("row : \(row + 1), column : \(allTextAttr[row].count)")
-        }
         // 空文字ならカーソル文字にする
         if getCurrChar() == "" {
             allTextAttr[cursor[0] - 1][cursor[1] - 1] = textAttr(char: "_", color: currColor)
@@ -668,7 +664,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("cursor[0] : \(cursor[0])")
         // 空白行と空行を削除する
         for row in 0..<allTextAttr.count {
-            print("row : \(row)")
             // 最後の行が空白でも空文字でもないとき
             if !isNone(allTextAttr[allTextAttr.count - 1]) || row == cursor[0] - 1 {
                 break
@@ -937,7 +932,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
                         }
-                        escDownTop(n: escDisplace[0])
+                        escDownTop(n: n)
                         escSeq = 0
                     case "F":
                         var n = escDisplace[0]
@@ -947,7 +942,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         if n >= cursor[0] - base {
                             n = cursor[0] - base - 1
                         }
-                        escUpTop(n: escDisplace[0])
+                        escUpTop(n: n)
                         escSeq = 0
                     case "G":
                         escRoot(n: cursor[0], m: escDisplace[0])
@@ -1029,10 +1024,25 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 }
                 // BS(削除)のとき
                 else if dataString! == "\u{08}" {
+                    // カーソル前に文字があるとき
                     if cursor[1] > 1 {
                         cursor[1] = cursor[1] - 1
                     }
+                    // カーソル前に文字がないとき
+                    else {
+                        // カーソル上に行があるとき
+                        if cursor[0] > 1 {
+                            // 一つ上の行の最後に移動
+                            cursor[0] -= 1
+                            cursor[1] = allTextAttr[cursor[0] - 1].count + 1
+                            // 最後の行を消す
+                            allTextAttr.removeLast()
+                            // カーソル文字を付け足す
+                            allTextAttr[allTextAttr.count - 1].append(textAttr(char: "_", color: currColor))
+                        }
+                    }
                 }
+                // それ以外のとき
                 else {
                     cursor[1] = cursor[1] + dataString!.count
                 }
@@ -1176,7 +1186,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             text.append(char)
             // 次の行の準備
             row += 1
-            print("row : \(row)")
         }
         
         // 色付きのテキストを設定する

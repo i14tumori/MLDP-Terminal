@@ -101,6 +101,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 画面スクロール制御変数
     var prevScroll = CGPoint(x: 0, y: 0)
+    // 画面スクロールの基底位置を記憶する変数
+    var viewBase = -1
     
     // メニュー表示を制御する変数
     var tapCount = 0
@@ -203,24 +205,30 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 移動後の相対位置を取得する
         let location = sender.translation(in: self.view)
         print("location : \(location)")
+        // スクロールを開始するとき
+        if viewBase < 0 {
+            viewBase = base
+        }
         // 画面を上にスワイプしたとき
         if prevScroll.y > location.y {
             print("up Swipe")
+            print("viewBase : \(viewBase)")
             // 下にスクロールできるとき
-            if base < allTextAttr.count - viewSize[0] {
+            if viewBase < allTextAttr.count - viewSize[0] && viewBase > -1 {
                 // 基底位置を下げる
-                base += 1
-                viewCursor()
+                viewBase += 1
+                view(scroll: true)
             }
         }
         // 画面を下にスワイプしたとき
         else if location.y > prevScroll.y {
             print("down Swipe")
+            print("viewBase : \(viewBase)")
             // 上にスクロールできるとき
-            if base > 0 {
+            if viewBase > 0 {
                 // 基底位置を上げる
-                base -= 1
-                viewCursor()
+                viewBase -= 1
+                view(scroll: true)
             }
         }
         // 位置を変更する
@@ -252,8 +260,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // ペリフェラルにデータを書き込む
         writePeripheral(input)
         
-        // カーソルを表示する
-        viewCursor()
+        // 表示する
+        view()
         
         // デフォルトカーソル(青縦棒)位置への追記はしない
         return false
@@ -285,8 +293,43 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
          textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
-        // カーソル位置にスクロールする
-        scrollToCursor()
+        
+        print("base : \(base)")
+        print("viewSize[0] : \(viewSize[0])")
+        print("viewSIze[1] : \(viewSize[1])")
+        print("allTextAttr.count : \(allTextAttr.count)")
+        var row = base
+        while row < viewSize[0] && row < allTextAttr.count {
+            if allTextAttr[row].count > viewSize[1] {
+                print("pre viewSize : \(viewSize[0])")
+                viewSize[0] -= allTextAttr[row].count / viewSize[1]
+                print("aft viewSize : \(viewSize[0])")
+            }
+            row += 1
+        }
+        /*
+        for row in base..<viewSize[0] {
+            print("row : \(row)")
+            if allTextAttr[row].count > viewSize[1] {
+                viewSize[0] -= allTextAttr[row].count / viewSize[1]
+            }
+        }
+        */
+        // キーボードの高さだけ基底位置を下げる
+        base += Int(keyboardHeight / " ".getStringHeight(textview.font!)) + 1
+        // 基底位置を下げすぎたとき
+        if base > allTextAttr.count - viewSize[0] {
+            // 基底位置を上げる
+            base = allTextAttr.count - viewSize[0]
+            // 基底位置の上限を定める
+            if base < 0 {
+                base = 0
+            }
+        }
+        // 書き込み位置を表示する
+        view()
+        // スクロール基底を初期化する
+        viewBase = -1
     }
     
     // キーボードが消えるときに画面を戻す関数
@@ -296,8 +339,23 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
-        // カーソル位置にスクロールする
-        scrollToCursor()
+        // キーボードの高さを取得する
+        let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
+        // キーボードの高さだけ基底位置を上げる
+        base -= Int(keyboardHeight / " ".getStringHeight(textview.font!)) + 1
+        // 基底位置の上限を定める
+        if base < 0 {
+            base = 0
+        }
+        // 書き込み位置を表示する
+        if viewBase > -1 && allTextAttr.count - viewBase > viewSize[0] {
+            view(scroll: true)
+        }
+        else {
+            view()
+            // スクロール基底を初期化する
+            viewBase = -1
+        }
     }
     
     // 画面が回転したときに呼ばれる関数
@@ -334,7 +392,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             showMenu(duration: 0.7)
         default: break
         }
-        print("base : \(base)")
+        
+        // デバッグ用
+        viewChar(allTextAttr)
+        
     }
     
     // メニューを隠す関数
@@ -557,8 +618,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             print("curText : \(allTextAttr[cursor[0] - 1])")
         }
         refresh()
-        // カーソルを表示する
-        viewCursor()
+        // 表示する
+        view()
     }
     
     // 左にn移動する関数
@@ -586,8 +647,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソルをずらす
         cursor[1] = cursor[1] - move
         refresh()
-        // カーソルを表示する
-        viewCursor()
+        // 表示する
+        view()
     }
     
     // n行下の先頭に移動する関数
@@ -617,8 +678,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         cursor[0] = cursor[0] + n
         cursor[1] = 1
         refresh()
-        // カーソルを表示する
-        viewCursor()
+        // 表示する
+        view()
     }
     
     // n行上の先頭に移動する関数
@@ -668,8 +729,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             allTextAttr.removeLast()
         }
         refresh()
-        // カーソルを表示する
-        viewCursor()
+        // 表示する
+        view()
     }
     
     // 現在位置と関係なく上からn、左からmの場所に移動する関数
@@ -843,8 +904,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         
-        // カーソル位置にスクロールする
-        scrollToCursor()
+        // スクロール基底を初期化する
+        viewBase = -1
+        // 書き込み位置を表示する
+        view()
         
         // 複数文字届いたときは一字ずつ処理する
         var tempSaveData = dataString!
@@ -1033,17 +1096,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         if cursor[0] > 1 {
                             // 一つ上の行に移動させる
                             cursor[0] -= 1
-                            print("base : \(base)")
-                            print("cursor[0] : \(cursor[0])")
-                            // カーソル行が表示範囲から外れたとき
-                            if cursor[0] == base {
-                                print("out of range")
-                                base = cursor[0] - viewSize[0]
-                                // 基底位置の上限を定める
-                                if base < 0 {
-                                    base = 0
-                                }
-                            }
                             // カーソル以降の文字列を上にずらす
                             // 空文字のとき
                             if allTextAttr[cursor[0] - 1][0].char == "" {
@@ -1059,6 +1111,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             cursor[1] = allTextAttr[cursor[0] - 1].count
                             // カーソルのあった行を消す
                             allTextAttr.remove(at: cursor[0])
+                            // 基底位置をずらす
+                            if base > 0 {
+                                base -= 1
+                            }
                         }
                     }
                 }
@@ -1067,8 +1123,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     cursor[1] = cursor[1] + dataString!.count
                 }
             }
-            // カーソルを表示する
-            viewCursor()
+            // 表示する
+            view()
         }
     }
     
@@ -1117,6 +1173,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func writePeripheral(_ txStr: String) {
         print("--- writePeripheral ---")
         if let txData = txStr.data(using: .utf8) {
+            print("txData : \(String(describing: String(data: txData, encoding: .utf8)))")
             appDelegate.peripheral.writeValue(txData, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
         }
         else {
@@ -1164,9 +1221,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    // カーソルを表示する関数
-    func viewCursor() {
-        print("--- viewCursor ---")
+    // 画面表示する関数
+    func view(scroll type: Bool = false) {
+        print("--- view ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
         
         let text = NSMutableAttributedString()
@@ -1175,11 +1232,23 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // 基底位置から最大行数またはテキスト行数だけ繰り返す
         var row = base
+        // スクロールのとき
+        if type {
+            //  スクロール表示の基底位置にする
+            row = viewBase
+        }
         print("row : \(row)")
         print("allTextAttr.count : \(allTextAttr.count)")
         print("viewSize[0] : \(viewSize[0])")
-        print("viewSize[1] : \(viewSize[1])")
-        while row < base + viewSize[0] && row < allTextAttr.count {
+        var limit = viewSize[0]
+        while row < base + limit && row < allTextAttr.count {
+            
+            // 折り返しがあるとき
+            if allTextAttr[row].count > viewSize[1] {
+                print("returnLine")
+                limit -= allTextAttr[row].count / viewSize[1]
+            }
+            
             // 各行の文字数だけ繰り返す
             for column in 0..<allTextAttr[row].count {
                 // 背景色を設定する
@@ -1353,32 +1422,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // カーソル基底を初期化する
         base = 0
+        // スクロール基底を初期化する
+        viewBase = -1
         // カーソル位置を初期化する
         cursor = [1, 1]
         // カーソル表示
-        viewCursor()
-    }
-    
-    // カーソル位置にスクロールする関数
-    func scrollToCursor() {
-        // カーソルの下側に十分な行がないとき
-        if allTextAttr.count - cursor[0] < viewSize[0] / 2 {
-            // 最下にカーソル行が来るようにする
-            base = allTextAttr.count - viewSize[0]
-        }
-        // カーソルの下側に十分な行があるとき
-        else {
-            // 中央にカーソル行が来るようにする
-            base = cursor[0] - (viewSize[0] / 2)
-        }
-        
-        // 基底位置の上限を定める
-        if base < 0 {
-            base = 0
-        }
-        
-        // 反映させる
-        viewCursor()
+        view()
     }
     
     // デバッグ用関数 (非確実的動作)
@@ -1393,5 +1442,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
         }
         print(text)
+        
+        let content = textview.text.split(separator: "\n")
+        print("textview line count : \(content.count)")
+        
+        print("viewSize : \(viewSize)")
+        
     }
 }

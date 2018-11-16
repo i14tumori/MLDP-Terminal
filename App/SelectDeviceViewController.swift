@@ -46,9 +46,7 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
             if let deviceName = self.userDefaults.string(forKey: "DeviceName") {
                 // 発見されたペリフェラルの個数
                 let deviceCount = self.appDelegate.discoveredDevice.count
-                print("deviceCount : \(deviceCount)")
                 for i in 0..<deviceCount {
-                    print("i : \(i)")
                     // 以前接続したペリフェラルが検出されたとき
                     if deviceName == self.appDelegate.discoveredDevice[i].name {
                         // ペリフェラルを登録する

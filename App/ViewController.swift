@@ -99,6 +99,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var allTextAttr = [[textAttr]]()
     // テキスト折り返し判断用フラグ
     var flap = false
+    // 折り返し解除判断用フラグ
+    var release = false
     // 色の一時記憶変数
     var currColor = UIColor.black
     // 画面サイズ記憶変数
@@ -1376,16 +1378,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("viewSize[0] : \(viewSize[0])")
         var limit = viewSize[0]
         // 基底位置から最大行数またはテキスト行数だけ繰り返す
-        var row = base
-        // スクロールのとき
-        if type {
-            //  スクロール表示の基底位置にする
-            row = viewBase
-        }
-        print("row : \(row)")
-        print("allTextAttr.count : \(allTextAttr.count)")
-        print("viewSize[0] : \(viewSize[0])")
-        var limit = viewSize[0]
         while row < base + limit && row < allTextAttr.count {
             
             // 折り返しがあるとき

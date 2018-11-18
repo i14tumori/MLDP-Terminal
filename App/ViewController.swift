@@ -321,14 +321,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             row += 1
         }
-        /*
-        for row in base..<viewSize[0] {
-            print("row : \(row)")
-            if allTextAttr[row].count > viewSize[1] {
-                viewSize[0] -= allTextAttr[row].count / viewSize[1]
-            }
-        }
-        */
         // キーボードの高さだけ基底位置を下げる
         base += Int(keyboardHeight / " ".getStringHeight(textview.font!)) + 1
         // 基底位置を下げすぎたとき

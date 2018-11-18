@@ -8,6 +8,7 @@
 import UIKit
 import CoreBluetooth
 
+
 // String型の拡張メソッド
 extension String {
     // String型を一文字ずつの配列に分解する関数
@@ -88,9 +89,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var escDisplace = [0, 0]
     
     // カーソルの基底位置を記憶する変数
-    var viewBase = 0
-    // 文字入力の規定位置を記憶する変数
-    var writeBase = 0
+    var base = 0
     // カーソル位置記憶変数
     var cursor = [1, 1]
     // テキスト保存変数
@@ -102,6 +101,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 画面スクロール制御変数
     var prevScroll = CGPoint(x: 0, y: 0)
+    // 画面スクロールの基底位置を記憶する変数
+    var viewBase = -1
     
     // メニュー表示を制御する変数
     var tapCount = 0
@@ -204,24 +205,34 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 移動後の相対位置を取得する
         let location = sender.translation(in: self.view)
         print("location : \(location)")
+        // スクロールを開始するとき
+        if viewBase < 0 {
+            viewBase = base
+        }
         // 画面を上にスワイプしたとき
         if prevScroll.y > location.y {
             print("up Swipe")
+            print("viewBase : \(viewBase)")
+            let row = viewingRow(viewBase, allTextAttr.count)
+            print("viewBase : \(viewBase)")
+            print("row : \(row)")
             // 下にスクロールできるとき
-            if viewBase < allTextAttr.count - viewSize[0] {
+            if viewBase < row - viewSize[0] && viewBase > -1 {
+                print("scroll enable")
                 // 基底位置を下げる
                 viewBase += 1
-                viewCursor()
+                view(scroll: true)
             }
         }
-        // 画面を下にスワイプしたとき
+            // 画面を下にスワイプしたとき
         else if location.y > prevScroll.y {
             print("down Swipe")
+            print("viewBase : \(viewBase)")
             // 上にスクロールできるとき
             if viewBase > 0 {
                 // 基底位置を上げる
                 viewBase -= 1
-                viewCursor()
+                view(scroll: true)
             }
         }
         // 位置を変更する
@@ -253,8 +264,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // ペリフェラルにデータを書き込む
         writePeripheral(input)
         
-        // カーソルを表示する
-        viewCursor()
+        // 表示する
+        view()
+        // スクロール基底を初期化する
+        viewBase = -1
         
         // デフォルトカーソル(青縦棒)位置への追記はしない
         return false
@@ -280,14 +293,49 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // キーボードが現れるときに画面をずらす関数
     @objc func keyboardWillShow(notification: Notification?) {
         print("--- keyboardWillShow ---")
+        print("pre base : \(base)")
         // キーボードの高さを取得する
         let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
         // textviewの高さを変更する
-         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
+        textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
-        // カーソル位置にスクロールする
-        scrollToCursor()
+        /*
+        // キーボードの高さだけ基底位置を下げる
+        base += Int(keyboardHeight / " ".getStringHeight(textview.font!)) + 1
+        print("base : \(base)")
+        let virtualRow = viewingRow(0, allTextAttr.count)
+        print("virtualRow : \(virtualRow)")
+        // 基底位置を下げすぎたとき
+        if base > virtualRow - viewSize[0] {
+            print("lower")
+            print("viewSize[0] : \(viewSize[0])")
+            // 基底位置を上げる
+            base = viewSize[0] - (virtualRow - base) - 1
+            print("base : \(base)")
+        }
+        */
+        print("cursor[0] : \(cursor[0])")
+        // カーソルが表示範囲から外れたとき
+        if cursor[0] > base + viewSize[0] {
+            // キーボードの高さだけ基底位置を下げる
+            base += Int(keyboardHeight / " ".getStringHeight(textview.font!)) + 1
+            print("base : \(base)")
+            let virtualRow = viewingRow(0, allTextAttr.count)
+            print("virtualRow : \(virtualRow)")
+            // 基底位置を下げすぎたとき
+            if base > virtualRow - viewSize[0] {
+                print("lower")
+                print("viewSize[0] : \(viewSize[0])")
+                // 基底位置を上げる
+                base = viewSize[0] - (virtualRow - base) - 1
+                print("base : \(base)")
+            }
+        }
+        // 書き込み位置を表示する
+        view()
+        // スクロール基底を初期化する
+        viewBase = -1
     }
     
     // キーボードが消えるときに画面を戻す関数
@@ -297,8 +345,26 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
-        // カーソル位置にスクロールする
-        scrollToCursor()
+        // キーボードの高さを取得する
+        let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
+        // キーボードの高さだけ基底位置を上げる
+        base -= Int(keyboardHeight / " ".getStringHeight(textview.font!)) + 1
+        // 基底位置の上限を定める
+        if base < 0 {
+            base = 0
+        }
+        // 書き込み位置を表示する(キーボードが消えることで下に余白ができるのを防ぐための場合分け)
+        // スクロールしていたとき
+        if viewBase > -1 && allTextAttr.count - viewBase > viewSize[0] {
+            view(scroll: true)
+        }
+        // スクロールしていないとき
+        else {
+            // 表示する
+            view()
+            // スクロール基底を初期化する
+            viewBase = -1
+        }
     }
     
     // 画面が回転したときに呼ばれる関数
@@ -335,7 +401,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             showMenu(duration: 0.7)
         default: break
         }
-        print("base : \(viewBase)")
+        
+        // デバッグ用
+        viewChar(allTextAttr)
+        
     }
     
     // メニューを隠す関数
@@ -500,7 +569,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     /* エスケープシーケンスメソッド */
-
+    
     // 上にn移動する関数
     // n : 変位
     func escUp(n: Int) {
@@ -558,8 +627,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             print("curText : \(allTextAttr[cursor[0] - 1])")
         }
         refresh()
-        // カーソルを表示する
-        viewCursor()
+        // 表示する
+        view()
     }
     
     // 左にn移動する関数
@@ -587,8 +656,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソルをずらす
         cursor[1] = cursor[1] - move
         refresh()
-        // カーソルを表示する
-        viewCursor()
+        // 表示する
+        view()
     }
     
     // n行下の先頭に移動する関数
@@ -618,8 +687,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         cursor[0] = cursor[0] + n
         cursor[1] = 1
         refresh()
-        // カーソルを表示する
-        viewCursor()
+        // 表示する
+        view()
     }
     
     // n行上の先頭に移動する関数
@@ -669,8 +738,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             allTextAttr.removeLast()
         }
         refresh()
-        // カーソルを表示する
-        viewCursor()
+        // 表示する
+        view()
     }
     
     // 現在位置と関係なく上からn、左からmの場所に移動する関数
@@ -684,7 +753,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // cursor[0] - n上の先頭に移動する
             escUpTop(n: cursor[0] - n)
         }
-        // カーソルを下に移動させるとき
+            // カーソルを下に移動させるとき
         else {
             // n - cursor[0]下の先頭に移動する
             escDownTop(n: n - cursor[0])
@@ -692,7 +761,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 左からmの位置に移動する
         escRight(n: m - 1)
     }
-
+    
     /* Central関連メソッド */
     
     // centralManagerの状態が変化すると呼ばれるイベント
@@ -844,9 +913,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         
-        // カーソル位置にスクロールする
-        scrollToCursor()
-        
         // 複数文字届いたときは一字ずつ処理する
         var tempSaveData = dataString!
         for _ in 0..<tempSaveData.count {
@@ -899,9 +965,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
-                        print("base : \(viewBase)")
-                        if n >= cursor[0] - viewBase {
-                            n = cursor[0] - viewBase - 1
+                        print("base : \(base)")
+                        if n >= cursor[0] - base {
+                            n = cursor[0] - base - 1
                         }
                         escUp(n: n)
                         escSeq = 0
@@ -909,10 +975,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
-                        print("base : \(viewBase)")
+                        print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
-                        if n  > (viewBase + viewSize[0]) - cursor[0] {
-                            n = (viewBase + viewSize[0]) - cursor[0]
+                        if n  > (base + viewSize[0]) - cursor[0] {
+                            n = (base + viewSize[0]) - cursor[0]
                         }
                         escDown(n: n)
                         escSeq = 0
@@ -926,10 +992,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
-                        print("base : \(viewBase)")
+                        print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
-                        if n  > (viewBase + viewSize[0]) - cursor[0] {
-                            n = (viewBase + viewSize[0]) - cursor[0]
+                        if n  > (base + viewSize[0]) - cursor[0] {
+                            n = (base + viewSize[0]) - cursor[0]
                         }
                         escDownTop(n: n)
                         escSeq = 0
@@ -937,9 +1003,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
-                        print("base : \(viewBase)")
-                        if n >= cursor[0] - viewBase {
-                            n = cursor[0] - viewBase - 1
+                        print("base : \(base)")
+                        if n >= cursor[0] - base {
+                            n = cursor[0] - base - 1
                         }
                         escUpTop(n: n)
                         escSeq = 0
@@ -969,7 +1035,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         escDisplace[1] = Int(dataString!)!
                         escSeq = 5
                     }
-                    // シーケンスではなかったとき
+                        // シーケンスではなかったとき
                     else {
                         print("NO ESC_SEQ")
                         escSeq = 0
@@ -986,15 +1052,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     if dataString! == "H" || dataString! == "f" {
                         var n = escDisplace[0]
                         print("n : \(n)")
-                        print("base : \(viewBase)")
+                        print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
                         if n > viewSize[0] {
                             n = viewSize[0]
                         }
-                        escRoot(n: n + viewBase, m: escDisplace[1])
+                        escRoot(n: n + base, m: escDisplace[1])
                         escSeq = 0
                     }
-                        // シーケンスではなかったとき
+                    // シーケンスではなかったとき
                     else {
                         print("NO ESC_SEQ")
                         escSeq = 0
@@ -1017,9 +1083,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     cursor[0] = cursor[0] + 1
                     cursor[1] = 1
                     // カーソルが基底から数えて最大行数を超えたとき
-                    if cursor[0] > viewBase + viewSize[0] {
-                        viewBase += 1
-                        writeBase = viewBase
+                    if cursor[0] > base + viewSize[0] {
+                        base += 1
                     }
                 }
                 // BS(削除)のとき
@@ -1033,20 +1098,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     else {
                         // カーソル上に行があるとき
                         if cursor[0] > 1 {
-                            // 一つ上の行に移動させる
+                            // 一つ上の行末に移動させる
                             cursor[0] -= 1
-                            print("base : \(viewBase)")
-                            print("cursor[0] : \(cursor[0])")
-                            // カーソル行が表示範囲から外れたとき
-                            if cursor[0] == viewBase {
-                                print("out of range")
-                                viewBase = cursor[0] - viewSize[0]
-                                writeBase = viewBase
-                                // 基底位置の上限を定める
-                                if viewBase < 0 {
-                                    viewBase = 0
-                                }
-                            }
+                            cursor[1] = allTextAttr[cursor[0] - 1].count + 1
                             // カーソル以降の文字列を上にずらす
                             // 空文字のとき
                             if allTextAttr[cursor[0] - 1][0].char == "" {
@@ -1058,10 +1112,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                                 // 追記する
                                 allTextAttr[cursor[0] - 1] += allTextAttr[cursor[0]]
                             }
-                            // カーソルを行末に移動させる
-                            cursor[1] = allTextAttr[cursor[0] - 1].count
                             // カーソルのあった行を消す
                             allTextAttr.remove(at: cursor[0])
+                            // 基底位置をずらす
+                            if base > 0 {
+                                base -= 1
+                            }
                         }
                     }
                 }
@@ -1070,8 +1126,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     cursor[1] = cursor[1] + dataString!.count
                 }
             }
-            // カーソルを表示する
-            viewCursor()
+            // 表示する
+            view()
+            // スクロール基底を初期化する
+            viewBase = -1
         }
     }
     
@@ -1094,7 +1152,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if cursor[1] == 1 {
                 allTextAttr[cursor[0] - 1] = [textAttr(char: "", color: currColor)]
             }
-            // カーソル前に文字列があるとき
+                // カーソル前に文字列があるとき
             else {
                 allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1][0..<cursor[1] - 1])
             }
@@ -1120,6 +1178,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func writePeripheral(_ txStr: String) {
         print("--- writePeripheral ---")
         if let txData = txStr.data(using: .utf8) {
+            print("txData : \(String(describing: String(data: txData, encoding: .utf8)))")
             appDelegate.peripheral.writeValue(txData, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
         }
         else {
@@ -1167,31 +1226,34 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    // カーソルを表示する関数
-    func viewCursor(_ type: Int = 0) {
-        print("--- viewCursor ---")
+    // 画面表示する関数
+    func view(scroll type: Bool = false) {
+        print("--- view ---")
         print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
         
         let text = NSMutableAttributedString()
         var attributes: [NSAttributedStringKey : Any]
         var char: NSMutableAttributedString
         
-        // 基底位置から最大行数またはテキスト行数だけ繰り返す
-        var row: Int
-        switch type {
-        case 0:
+        // 基底位置を取得する
+        var row = base
+        // スクロールのとき
+        if type {
+            //  スクロール表示の基底位置にする
             row = viewBase
-        case 1:
-            row = writeBase
-        default:
-            print("type error")
-            return
         }
         print("row : \(row)")
         print("allTextAttr.count : \(allTextAttr.count)")
         print("viewSize[0] : \(viewSize[0])")
-        print("viewSize[1] : \(viewSize[1])")
-        while row < viewBase + viewSize[0] && row < allTextAttr.count {
+        var limit = viewSize[0]
+        // 基底位置から最大行数またはテキスト行数だけ繰り返す
+        while row < base + limit && row < allTextAttr.count {
+            
+            // 折り返しがあるとき
+            if allTextAttr[row].count > viewSize[1] {
+                limit -= allTextAttr[row].count / viewSize[1]
+            }
+            
             // 各行の文字数だけ繰り返す
             for column in 0..<allTextAttr[row].count {
                 // 背景色を設定する
@@ -1224,6 +1286,27 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.attributedText = text
         // フォントを再設定する
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
+    }
+    
+    // textview上の見かけの行数を取得する関数
+    // 返り値 : 見かけの行数
+    func viewingRow(_ base: Int, _ range: Int) -> Int {
+        print("--- viewingRow ---")
+        print("base : \(base)")
+        print("range : \(range)")
+        print("viewSize[0] : \(viewSize[0])")
+        print("allTextAttr.count : \(allTextAttr.count)")
+        var viewingRow = 0
+        var row = base
+        while row < allTextAttr.count && row < base + range {
+            if allTextAttr[row].count > viewSize[1] {
+                viewingRow += allTextAttr[row].count / viewSize[1]
+            }
+            viewingRow += 1
+            row += 1
+        }
+        print("returnRow : \(viewingRow)")
+        return viewingRow
     }
     
     // カーソルの最後尾判断をする関数
@@ -1270,8 +1353,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- delSpace ---")
         var delText = text
         var count = text.count
-        print("delText : \(delText)")
-        print("count : \(count)")
         // 最後の文字が空白かつ制限内のとき
         while delText[delText.count - 1].char == " " && count > limit {
             // 最後の文字を消す
@@ -1281,7 +1362,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if delText.count == 0 {
             delText = [textAttr(char: "", color: currColor)]
         }
-        print("return delText : \(delText)")
         return delText
     }
     
@@ -1314,7 +1394,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // 空文字に変換
                 refreshText.append([textAttr(char: "", color: currColor)])
             }
-            // 文字がある(空文字を含む)またはカーソル行のとき
+                // 文字がある(空文字を含む)またはカーソル行のとき
             else {
                 refreshText.append(allTextAttr[row])
             }
@@ -1350,7 +1430,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 変換後の配列にする
         allTextAttr = refreshText
     }
-   
+    
     // textviewをクリアする関数
     func clear() {
         print("--- clear ---")
@@ -1364,41 +1444,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         tempToastMessage = ""
         
         // カーソル基底を初期化する
-        viewBase = 0
-        writeBase = 0
+        base = 0
+        // スクロール基底を初期化する
+        viewBase = -1
         // カーソル位置を初期化する
         cursor = [1, 1]
         // カーソル表示
-        viewCursor()
+        view()
     }
     
-    // カーソル位置にスクロールする関数
-    func scrollToCursor() {
-        // カーソルの下側に十分な行がないとき
-        if allTextAttr.count - cursor[0] < viewSize[0] / 2 {
-            // 最下にカーソル行が来るようにする
-            viewBase = allTextAttr.count - viewSize[0]
-        }
-        // カーソルの下側に十分な行があるとき
-        else {
-            // 中央にカーソル行が来るようにする
-            viewBase = cursor[0] - (viewSize[0] / 2)
-        }
-        
-        // 基底位置の上限を定める
-        if viewBase < 0 {
-            viewBase = 0
-        }
-        
-        // 反映させる
-        viewCursor()
-    }
-    
-    // デバッグ用関数 (非確実的動作)
+    // デバッグ用関数
     func viewChar(_ text: [[textAttr]]) {
         print("--- viewChar ---")
         let allTextAttr = text
-        var text = [""]
+        var text = [String]()
         for row in 0..<allTextAttr.count {
             text.append("")
             for column in 0..<allTextAttr[row].count {
@@ -1406,5 +1465,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
         }
         print(text)
+        
+        print("base : \(base)")
+        
+        let content = textview.text.split(separator: "\n")
+        print("textview line count : \(content.count)")
+        
+        print("viewSize : \(viewSize)")
+        
+        print("viewingRow(0) : \(viewingRow(0, allTextAttr.count))")
+        
+        print("textview text : \(textview.text ?? "default")")
+        
+        print("cursor : \(cursor)")
+        
     }
 }

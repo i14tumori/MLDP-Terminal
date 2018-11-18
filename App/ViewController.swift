@@ -68,6 +68,8 @@ struct textAttr {
     var char: String
     // 色を保存する変数
     var color: UIColor
+    // 折り返しの有無を表す変数
+    var previous: Bool = false
     
     // 初期化関数
     init(char: String, color: UIColor) {
@@ -300,21 +302,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - keyboardHeight - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
-        /*
-        // キーボードの高さだけ基底位置を下げる
-        base += Int(keyboardHeight / " ".getStringHeight(textview.font!)) + 1
-        print("base : \(base)")
-        let virtualRow = viewingRow(0, allTextAttr.count)
-        print("virtualRow : \(virtualRow)")
-        // 基底位置を下げすぎたとき
-        if base > virtualRow - viewSize[0] {
-            print("lower")
-            print("viewSize[0] : \(viewSize[0])")
-            // 基底位置を上げる
-            base = viewSize[0] - (virtualRow - base) - 1
-            print("base : \(base)")
-        }
-        */
         print("cursor[0] : \(cursor[0])")
         // カーソルが表示範囲から外れたとき
         if cursor[0] > base + viewSize[0] {
@@ -502,13 +489,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func setSize() {
         print("--- setSize ---")
         // 最大行数
-        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!))
+        let row = Int((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!)) + 1
         // 最大桁数
-        let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!))
+        let column = Int((textview.frame.width - textview.layoutMargins.left - textview.layoutMargins.right) / " ".getStringWidth(textview.font!)) + 1
         print("rowSize : \(row)")
         print("columnSize : \(column)")
         // 記憶する
         viewSize = [row, column]
+        // allTextAttr配列を作り変える
+        textResize()
     }
     
     /* キーボード追加ボタンイベント */
@@ -1429,6 +1418,45 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // 変換後の配列にする
         allTextAttr = refreshText
+    }
+    
+    // allTextAttr配列をviewSizeの大きさで作り変える関数
+    func textResize() {
+        print("--- textResize ---")
+        print("viewSize : \(viewSize)")
+        // allTextAttr配列のpreviousを初期化する
+        for row in 0..<allTextAttr.count {
+            for column in 0..<allTextAttr[row].count {
+                allTextAttr[row][column].previous = false
+            }
+        }
+        
+        var newText = [[textAttr]]()
+        for row in 0..<allTextAttr.count {
+            // 行頭の文字を追加する
+            newText.append([allTextAttr[row][0]])
+            // 折り返しを記録する
+            newText[newText.count - 1][0].previous = true
+            for column in 1..<allTextAttr[row].count {
+                // 画面サイズを超えるとき
+                if column % viewSize[1] == 0 {
+                    // 次の行に追加する
+                    newText.append([allTextAttr[row][column]])
+                    // 折り返しを記録する
+                    newText[newText.count - 1][0].previous = true
+                }
+                // それ以外のとき
+                else {
+                    // 最後尾に追加する
+                    newText[newText.count - 1].append(allTextAttr[row][column])
+                }
+                if cursor == [row, column] {
+                    cursor = [newText.count, newText[newText.count - 1].count]
+                }
+            }
+        }
+        // 新しい配列をallTextAttrにする
+        allTextAttr = newText
     }
     
     // textviewをクリアする関数

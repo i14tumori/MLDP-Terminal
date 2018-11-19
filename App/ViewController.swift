@@ -312,6 +312,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("viewSize[0] : \(viewSize[0])")
         print("viewSIze[1] : \(viewSize[1])")
         print("allTextAttr.count : \(allTextAttr.count)")
+        /*
         var row = base
         while row < viewSize[0] && row < allTextAttr.count {
             if allTextAttr[row].count > viewSize[1] {
@@ -321,6 +322,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             row += 1
         }
+        */
         // キーボードの高さだけ基底位置を下げる
         base += Int(keyboardHeight / " ".getStringHeight(textview.font!)) + 1
         // 基底位置を下げすぎたとき
@@ -358,7 +360,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if viewBase > -1 && allTextAttr.count - viewBase > viewSize[0] {
             view(scroll: true)
         }
-        // スクロールしていないとき
+            // スクロールしていないとき
         else {
             // 表示する
             view()
@@ -934,7 +936,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if !dataString!.isAlphanumeric(dataString!) {
                 return
             }
-            // エスケープシーケンス のとき
+                // エスケープシーケンス のとき
             else if escSeq > 0 {
                 switch escSeq {
                 // シーケンス一文字目
@@ -1070,7 +1072,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         escRoot(n: n + base, m: escDisplace[1])
                         escSeq = 0
                     }
-                    // シーケンスではなかったとき
+                        // シーケンスではなかったとき
                     else {
                         print("NO ESC_SEQ")
                         escSeq = 0
@@ -1078,64 +1080,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 default: break
                 }
             }
-            // エスケープのとき
+                // エスケープのとき
             else if dataString! == "\u{1b}" {
                 escSeq = 1
             }
-            // それ以外のとき
+                // それ以外のとき
             else {
                 // textViewに読み込みデータを書き込む
                 writeTextView(dataString!)
-                
-                // カーソルをずらす
-                // 改行のとき
-                if dataString! == "\n" || dataString! == "\r" {
-                    cursor[0] = cursor[0] + 1
-                    cursor[1] = 1
-                    // カーソルが基底から数えて最大行数を超えたとき
-                    if cursor[0] > base + viewSize[0] {
-                        base += 1
-                    }
-                }
-                // BS(削除)のとき
-                else if dataString! == "\u{08}" {
-                    print("cursor : \(cursor)")
-                    // カーソル前に文字があるとき
-                    if cursor[1] > 1 {
-                        cursor[1] -= 1
-                    }
-                    // カーソル前に文字がないとき
-                    else {
-                        // カーソル上に行があるとき
-                        if cursor[0] > 1 {
-                            // 一つ上の行に移動させる
-                            cursor[0] -= 1
-                            // カーソル以降の文字列を上にずらす
-                            // 空文字のとき
-                            if allTextAttr[cursor[0] - 1][0].char == "" {
-                                // 書き換える
-                                allTextAttr[cursor[0] - 1] = allTextAttr[cursor[0]]
-                            }
-                            // 空文字ではないとき
-                            else {
-                                // 追記する
-                                allTextAttr[cursor[0] - 1] += allTextAttr[cursor[0]]
-                            }
-                            // カーソルを行末に移動させる
-                            cursor[1] = allTextAttr[cursor[0] - 1].count
-                            // カーソルのあった行を消す
-                            allTextAttr.remove(at: cursor[0])
-                            // 基底位置をずらす
-                            if base > 0 {
-                                base -= 1
-                            }
-                        }
-                    }
-                }
-                // それ以外のとき
-                else {
-                    cursor[1] = cursor[1] + dataString!.count
-                }
             }
             // 表示する
             view()
@@ -1176,7 +1128,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if cursor[1] == 1 {
                 allTextAttr[cursor[0] - 1] = [textAttr(char: "", color: currColor)]
             }
-            // カーソル前に文字列があるとき
+                // カーソル前に文字列があるとき
             else {
                 allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1][0..<cursor[1] - 1])
             }
@@ -1214,7 +1166,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // 折り返しフラグを立てる
                 flap = true
             }
-            // カーソルが行末(カーソル文字以外)のとき
+                // カーソルが行末(カーソル文字以外)のとき
             else if cursor[1] == viewSize[1] {
                 // カーソルをずらす
                 cursor[0] += 1
@@ -1222,7 +1174,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // 同じ行にする
                 allTextAttr[cursor[0] - 1][cursor[1] - 1].previous = true
             }
-            // それ以外のとき
+                // それ以外のとき
             else {
                 // カーソルをずらす
                 cursor[1] += 1
@@ -1232,7 +1184,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // カーソルがあった行の末尾を削除する
             allTextAttr[(cursor[0] - 1) - 1].removeLast()
         }
-        // 折り返ししないとき
+            // 折り返ししないとき
         else {
             // カーソルの位置に文字と色を書き込む
             allTextAttr[cursor[0] - 1].insert(textAttr(char: string, color: currColor, previous: flap), at: cursor[1] - 1)
@@ -1272,7 +1224,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
             cursor[1] -= 1
         }
-        // カーソル前に文字がないとき
+            // カーソル前に文字がないとき
         else {
             // カーソル上に行があるとき
             if cursor[0] > 1 {
@@ -1295,7 +1247,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     // カーソルのあった行を消す
                     allTextAttr.remove(at: cursor[0])
                 }
-                // 空文字ではないとき
+                    // 空文字ではないとき
                 else {
                     // 追記できる文字数
                     let count = viewSize[1] - allTextAttr[cursor[0] - 1].count
@@ -1311,7 +1263,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         // 同じ行にする
                         allTextAttr[cursor[0]][0].previous = true
                     }
-                    // 文字列がないとき
+                        // 文字列がないとき
                     else {
                         // カーソルのあった行を消す
                         allTextAttr.remove(at: cursor[0])
@@ -1569,7 +1521,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // 最後行に付け加える
                 restoreText[restoreText.count - 1] = restoreText[restoreText.count - 1] + allTextAttr[row]
             }
-            // 行が変わるとき
+                // 行が変わるとき
             else {
                 // 行を付け足す
                 restoreText.append(allTextAttr[row])
@@ -1598,7 +1550,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     // 折り返しを記録する
                     newText[newText.count - 1][0].previous = true
                 }
-                // それ以外のとき
+                    // それ以外のとき
                 else {
                     // 最後尾に追加する
                     newText[newText.count - 1].append(allTextAttr[row][column])
@@ -1666,3 +1618,4 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
     }
 }
+

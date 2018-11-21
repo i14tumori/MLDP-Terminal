@@ -220,9 +220,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if prevScroll.y > location.y {
             print("up Swipe")
             print("viewBase : \(viewBase)")
-            let row = viewingRow(viewBase, allTextAttr.count)
             print("viewBase : \(viewBase)")
-            print("row : \(row)")
             // 下にスクロールできるとき
             if viewBase < allTextAttr.count - viewSize[0] && viewBase > -1 {
                 // 基底位置を下げる
@@ -1297,6 +1295,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     }
                     // 上行が空のとき
                     else if allTextAttr[cursor[0] - 1][0].char == "" {
+                        // 異なる行にする
+                        allTextAttr[cursor[0]][0].previous = false
                         // 書き換える
                         allTextAttr[cursor[0] - 1] = allTextAttr[cursor[0]]
                         // カーソルをずらす
@@ -1456,27 +1456,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textview.font = UIFont(name: "CourierNewPSMT", size: textview.font!.pointSize)
     }
     
-    // textview上の見かけの行数を取得する関数
-    // 返り値 : 見かけの行数
-    func viewingRow(_ base: Int, _ range: Int) -> Int {
-        print("--- viewingRow ---")
-        print("base : \(base)")
-        print("range : \(range)")
-        print("viewSize[0] : \(viewSize[0])")
-        print("allTextAttr.count : \(allTextAttr.count)")
-        var viewingRow = 0
-        var row = base
-        while row < allTextAttr.count && row < base + range {
-            if allTextAttr[row].count > viewSize[1] {
-                viewingRow += allTextAttr[row].count / viewSize[1]
-            }
-            viewingRow += 1
-            row += 1
-        }
-        print("returnRow : \(viewingRow)")
-        return viewingRow
-    }
-    
     // カーソルの最後尾判断をする関数
     // 返り値 : 最後尾 -> true, それ以外 -> false
     func curIsEnd() -> Bool {
@@ -1569,12 +1548,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         var refreshText = [[textAttr]]()
         // 空白文字列の削除
         for row in 0..<allTextAttr.count {
-            // 空白だけかつカーソル行ではないとき
-            if isNone(allTextAttr[row]) && row != cursor[0] - 1 {
+            // 空白だけ かつ カーソル行ではない かつ 後文ではない
+            if isNone(allTextAttr[row]) && row != cursor[0] - 1 && !allTextAttr[row][0].previous {
                 // 空文字に変換
                 refreshText.append([textAttr(char: "", color: currColor)])
             }
-                // 文字がある(空文字を含む)またはカーソル行のとき
+            // 文字がある(空文字を含む)またはカーソル行のとき
             else {
                 refreshText.append(allTextAttr[row])
             }
@@ -1615,22 +1594,36 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func textResize() {
         print("--- textResize ---")
         print("viewSize : \(viewSize)")
+        print("cursor : \(cursor)")
         
         // 行単位に構成する
         var restoreText = [[textAttr]]()
         restoreText.append(allTextAttr[0])
+        print("add Line : \(allTextAttr[0])")
         for row in 1..<allTextAttr.count {
+            print("row : \(row)")
+            print("add Line : \(allTextAttr[row])")
             // 一行内のとき
             if allTextAttr[row][0].previous == true {
                 // 最後行に付け加える
                 restoreText[restoreText.count - 1] = restoreText[restoreText.count - 1] + allTextAttr[row]
+                // カーソル行のとき
+                if row == cursor[0] - 1 {
+                    cursor[0] = restoreText.count
+                    cursor[1] = (restoreText[restoreText.count - 1].count - allTextAttr[row].count) + cursor[1]
+                }
             }
             // 行が変わるとき
             else {
                 // 行を付け足す
                 restoreText.append(allTextAttr[row])
+                // カーソル行のとき
+                if row == cursor[0] - 1 {
+                    cursor[0] = restoreText.count
+                }
             }
         }
+        print("cursor : \(cursor)")
         
         // viewSize[1]の大きさの配列に構成する
         var newText = [[textAttr]]()
@@ -1643,18 +1636,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     // 次の行に追加する
                     newText.append([restoreText[row][column]])
                 }
-                // それ以外のとき
+                    // それ以外のとき
                 else {
                     // 最後尾に追加する
                     newText[newText.count - 1].append(restoreText[row][column])
                 }
-                if cursor == [row, column] {
+                if cursor == [row + 1, column + 1] {
                     cursor = [newText.count, newText[newText.count - 1].count]
                 }
             }
         }
         // 新しい配列をallTextAttrにする
         allTextAttr = newText
+        // 更新を反映する
+        view()
     }
     
     // textviewをクリアする関数

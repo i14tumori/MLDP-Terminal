@@ -72,7 +72,7 @@ struct textAttr {
     var previous: Bool
     
     // 初期化関数
-    init(char: String, color: UIColor, previous: Bool = false) {
+    init(char: String, color: UIColor, previous: Bool = true) {
         self.char = char
         self.color = color
         self.previous = previous
@@ -311,17 +311,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("viewSize[0] : \(viewSize[0])")
         print("viewSIze[1] : \(viewSize[1])")
         print("allTextAttr.count : \(allTextAttr.count)")
-        /*
-        var row = base
-        while row < viewSize[0] && row < allTextAttr.count {
-            if allTextAttr[row].count > viewSize[1] {
-                print("pre viewSize : \(viewSize[0])")
-                viewSize[0] -= allTextAttr[row].count / viewSize[1]
-                print("aft viewSize : \(viewSize[0])")
-            }
-            row += 1
-        }
-        */
         // キーボードの高さだけ基底位置を下げる
         base += Int(keyboardHeight / " ".getStringHeight(textview.font!)) + 1
         // 基底位置を下げすぎたとき
@@ -1154,66 +1143,59 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 折り返しのとき
         if allTextAttr[cursor[0] - 1].count == viewSize[1] {
             print("flapped")
+            // カーソル文字が押し出されるとき
+            if curIsSentenceEnd() {
+                // 折り返しフラグを立てる
+                flap = true
+            }
             // カーソルが最後行にあるとき
             if cursor[0] == allTextAttr.count {
                 print("cursor is last")
                 // カーソル行の末尾を次の行に追加する
                 allTextAttr.append([allTextAttr[cursor[0] - 1][allTextAttr[cursor[0] - 1].count - 1]])
+                // 行末文字を削除する
+                allTextAttr[cursor[0] - 1].removeLast()
+                // カーソル文字以外が次の行に追加されたとき
+                if !flap {
+                    // 同じ行にする
+                    allTextAttr[cursor[0]][0].previous = true
+                }
+                
             }
             // 最後行以外のとき
             else {
                 print("cursor is not last")
-                // カーソル行の末尾を次の行頭に挿入する
-                allTextAttr[cursor[0]].insert(allTextAttr[cursor[0] - 1][allTextAttr[cursor[0] - 1].count - 1], at: 0)
-                // 後文があるとき
-                if allTextAttr[cursor[0]][1].previous {
-                    print("continueLine exist")
-                    // 情報を初期化する
-                    allTextAttr[cursor[0]][1].previous = false
-                    // 下に行があるだけ繰り返す
-                    var bias = 0
-                    while cursor[0] + bias < allTextAttr.count {
-                        // 下に後文があるとき
-                        if allTextAttr[cursor[0] + bias][1].previous {
-                            // 文字が押し出されるとき
-                            if allTextAttr[cursor[0] + bias].count > viewSize[1] {
-                                // 行の末尾を次の行頭に書き込む
-                                allTextAttr[cursor[0] + bias].insert(allTextAttr[(cursor[0] + bias) - 1][allTextAttr[(cursor[0] + bias) - 1].count - 1], at: 0)
-                                // 後文であることを記録する
-                                allTextAttr[cursor[0] + bias][0].previous = true
-                                if allTextAttr[cursor[0] + bias].count > 1 {
-                                    allTextAttr[cursor[0] + bias][1].previous = false
-                                }
-                                // 行の末尾を削除する
-                                allTextAttr[(cursor[0] + bias) - 1].removeLast()
-                            }
-                            // 文字が押し出されないとき
-                            else {
-                                break
-                            }
-                        }
-                        // 下に後文がないとき
-                        else {
-                            break
-                        }
-                        // 次の行を対象にする
-                        bias += 1
-                        print("base : \(base)")
+                // 下に行があるだけ繰り返す
+                var bias = 0
+                while cursor[0] + bias < allTextAttr.count {
+                    // 行頭に挿入する
+                    allTextAttr[cursor[0] + bias].insert(allTextAttr[(cursor[0] + bias) - 1][allTextAttr[(cursor[0] + bias) - 1].count - 1], at: 0)
+                    // 同じ行にする
+                    allTextAttr[cursor[0] + bias][0].previous = true
+                    // 一つ上の行末文字を削除する
+                    allTextAttr[(cursor[0] + bias) - 1].removeLast()
+                    // 後文がないとき
+                    if !allTextAttr[cursor[0] + bias][1].previous {
+                        // 行頭以外の文字列を下にずらす
+                        allTextAttr.insert(Array(allTextAttr[cursor[0] + bias].suffix(allTextAttr[cursor[0] + bias].count - 1)), at: (cursor[0] + bias) + 1)
+                        // 行頭だけにする
+                        allTextAttr[cursor[0] + bias] = [allTextAttr[cursor[0] + bias][0]]
+                        // 繰り返しを終わる
+                        break
                     }
-                }
-                // 後文がないとき
-                else {
-                    print("continueLine not exist")
-                    // カーソルの次の行を押し出された末尾文字だけにする
-                    allTextAttr.insert(Array(allTextAttr[cursor[0]].suffix(allTextAttr[cursor[0]].count - 1)), at: cursor[0] + 1)
-                    allTextAttr[cursor[0]] = [allTextAttr[cursor[0]][0]]
-                    print("allLineCount : \(allTextAttr.count)")
-                    print("cursor[0] + 1 : \(cursor[0] + 1)")
-                    allTextAttr[cursor[0] + 1][0].previous = false
+                    // 後文がはあるが文字が押し出されていないとき
+                    else if allTextAttr[cursor[0] + bias].count <= viewSize[1] {
+                        // 情報を初期化する
+                        allTextAttr[cursor[0] + bias][1].previous = false
+                        // 繰り返しを終わる
+                        break
+                    }
+                    // 情報を初期化する
+                    allTextAttr[cursor[0] + bias][1].previous = false
+                    // 次の行を対象にする
+                    bias += 1
                 }
             }
-            // カーソル行の末尾を削除する
-            allTextAttr[cursor[0] - 1].removeLast()
             // カーソル位置に文字と色を書き込む
             allTextAttr[cursor[0] - 1].insert(textAttr(char: string, color: currColor), at: cursor[1] - 1)
             // カーソルが行末のとき
@@ -1221,8 +1203,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // カーソルをずらす
                 cursor[0] += 1
                 cursor[1] = 1
-                // 折り返しフラグを立てる
-                flap = true
             }
             // それ以外のとき
             else {

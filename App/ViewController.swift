@@ -97,10 +97,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var cursor = [1, 1]
     // テキスト保存変数
     var allTextAttr = [[textAttr]]()
-    // テキスト折り返し判断用フラグ
-    var flap = false
-    // 行結合判断用フラグ
-    var combine = false
     // 色の一時記憶変数
     var currColor = UIColor.black
     // 画面サイズ記憶変数
@@ -1137,7 +1133,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // 折り返しのとき
         if allTextAttr[cursor[0] - 1].count == viewSize[1] {
-            print("flapped")
             // カーソルが最後行にあるとき
             if cursor[0] == allTextAttr.count {
                 print("cursor is last")
@@ -1276,7 +1271,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
                 // 行が変わらないとき
                 if allTextAttr[cursor[0]][0].previous {
-                    print("combine")
                     // カーソル行の末尾を削除する
                     allTextAttr[cursor[0] - 1].removeLast()
                     // 文字列を上にずらすためのフラグを立てる
@@ -1596,50 +1590,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("viewSize : \(viewSize)")
         print("cursor : \(cursor)")
         
-        // 行単位に構成する
-        var restoreText = [[textAttr]]()
-        restoreText.append(allTextAttr[0])
-        print("add Line : \(allTextAttr[0])")
-        for row in 1..<allTextAttr.count {
-            print("row : \(row)")
-            print("add Line : \(allTextAttr[row])")
-            // 一行内のとき
-            if allTextAttr[row][0].previous == true {
-                // 最後行に付け加える
-                restoreText[restoreText.count - 1] = restoreText[restoreText.count - 1] + allTextAttr[row]
-                // カーソル行のとき
-                if row == cursor[0] - 1 {
-                    cursor[0] = restoreText.count
-                    cursor[1] = (restoreText[restoreText.count - 1].count - allTextAttr[row].count) + cursor[1]
-                }
-            }
-            // 行が変わるとき
-            else {
-                // 行を付け足す
-                restoreText.append(allTextAttr[row])
-                // カーソル行のとき
-                if row == cursor[0] - 1 {
-                    cursor[0] = restoreText.count
-                }
-            }
-        }
-        print("cursor : \(cursor)")
+        // 行単位の大きさに構成する
+        textLineUnit()
         
         // viewSize[1]の大きさの配列に構成する
         var newText = [[textAttr]]()
-        for row in 0..<restoreText.count {
+        for row in 0..<allTextAttr.count {
             // 行頭の文字を追加する
-            newText.append([restoreText[row][0]])
-            for column in 1..<restoreText[row].count {
+            newText.append([allTextAttr[row][0]])
+            for column in 1..<allTextAttr[row].count {
                 // 画面サイズを超えるとき
                 if column % viewSize[1] == 0 {
                     // 次の行に追加する
-                    newText.append([restoreText[row][column]])
+                    newText.append([allTextAttr[row][column]])
                 }
                     // それ以外のとき
                 else {
                     // 最後尾に追加する
-                    newText[newText.count - 1].append(restoreText[row][column])
+                    newText[newText.count - 1].append(allTextAttr[row][column])
                 }
                 if cursor == [row + 1, column + 1] {
                     cursor = [newText.count, newText[newText.count - 1].count]
@@ -1650,6 +1618,39 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         allTextAttr = newText
         // 更新を反映する
         view()
+    }
+    
+    // allTextAttr配列を行単位の大きさで作り変える関数
+    func textLineUnit() {
+        // 行単位に構成する
+        var newText = [[textAttr]]()
+        newText.append(allTextAttr[0])
+        print("add Line : \(allTextAttr[0])")
+        for row in 1..<allTextAttr.count {
+            print("row : \(row)")
+            print("add Line : \(allTextAttr[row])")
+            // 一行内のとき
+            if allTextAttr[row][0].previous == true {
+                // 最後行に付け加える
+                newText[newText.count - 1] = newText[newText.count - 1] + allTextAttr[row]
+                // カーソル行のとき
+                if row == cursor[0] - 1 {
+                    cursor[0] = newText.count
+                    cursor[1] = (newText[newText.count - 1].count - allTextAttr[row].count) + cursor[1]
+                }
+            }
+            // 行が変わるとき
+            else {
+                // 行を付け足す
+                newText.append(allTextAttr[row])
+                // カーソル行のとき
+                if row == cursor[0] - 1 {
+                    cursor[0] = newText.count
+                }
+            }
+        }
+        // 新しい配列をallTextAttrにする
+        allTextAttr = newText
     }
     
     // textviewをクリアする関数
@@ -1663,9 +1664,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         toast = false
         // トーストメッセージを初期化する
         tempToastMessage = ""
-        
-        // 折り返しフラグを初期化する
-        flap = false
         
         // カーソル基底を初期化する
         base = 0

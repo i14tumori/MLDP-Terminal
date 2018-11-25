@@ -97,10 +97,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var cursor = [1, 1]
     // テキスト保存変数
     var allTextAttr = [[textAttr]]()
-    // テキスト折り返し判断用フラグ
-    var flap = false
-    // 行結合判断用フラグ
-    var combine = false
     // 色の一時記憶変数
     var currColor = UIColor.black
     // 画面サイズ記憶変数
@@ -219,7 +215,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 画面を上にスワイプしたとき
         if prevScroll.y > location.y {
             print("up Swipe")
-            print("viewBase : \(viewBase)")
             print("viewBase : \(viewBase)")
             // 下にスクロールできるとき
             if viewBase < allTextAttr.count - viewSize[0] && viewBase > -1 {
@@ -627,8 +622,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             print("curText : \(allTextAttr[cursor[0] - 1])")
         }
         refresh()
-        // 表示する
-        view()
     }
     
     // 左にn移動する関数
@@ -656,8 +649,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソルをずらす
         cursor[1] = cursor[1] - move
         refresh()
-        // 表示する
-        view()
     }
     
     // n行下の先頭に移動する関数
@@ -665,10 +656,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escDownTop(n: Int) {
         print("--- escDownTop ---")
         print("n : \(n)")
-        // 移動がないとき(n = 0)
-        if n == 0 {
-            return
-        }
         // カーソル文字を削除する
         if curIsSentenceEnd() {
             print("remove last")
@@ -692,8 +679,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         cursor[0] = cursor[0] + n
         cursor[1] = 1
         refresh()
-        // 表示する
-        view()
     }
     
     // n行上の先頭に移動する関数
@@ -701,10 +686,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escUpTop(n: Int) {
         print("--- escUpTop ---")
         print("n : \(n)")
-        // 移動がないとき(n = 0)
-        if n == 0 {
-            return
-        }
         // カーソル文字を削除する
         if curIsSentenceEnd() {
             print("remove last")
@@ -730,8 +711,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         print("cursor[0] : \(cursor[0])")
         refresh()
-        // 表示する
-        view()
     }
     
     // 現在位置と関係なく上からn、左からmの場所に移動する関数
@@ -752,6 +731,79 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // 左からmの位置に移動する
         escRight(n: m - 1)
+    }
+    
+    // 画面消去関数(カーソル位置は移動しない)
+    // n : 消去範囲指定
+    // 0 : カーソルより後ろを消去する, 1 : カーソルより前を消去する, 2 : 画面全体を消去する
+    func escViewDelete(n: Int) {
+        print("--- escViewDelete ---")
+        print("n : \(n)")
+        print("base : \(base)")
+        switch n {
+        // カーソルより後ろを消去する
+        case 0:
+            // カーソル行より後ろを消去する
+            allTextAttr = Array(allTextAttr.prefix(cursor[0]))
+            // カーソル行のカーソルより後ろを消去する
+            allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1].prefix(cursor[1]))
+        // カーソルより前を消去する
+        case 1:
+            // カーソル行より前を消去する
+            for row in base..<cursor[0] - 1 {
+                allTextAttr[row] = [textAttr(char: "", color: currColor, previous: false)]
+            }
+            // カーソル行のカーソルより前を空白に置き換える
+            for column in 0..<cursor[1] - 1 {
+                allTextAttr[cursor[0] - 1][column].char = " "
+            }
+        // 画面全体を消去する
+        case 2:
+            // カーソル行より後ろを消去する
+            allTextAttr = Array(allTextAttr.prefix(cursor[0]))
+            // カーソル行のカーソルより後ろを消去する
+            allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1].prefix(cursor[1]))
+            // カーソル行より前を消去する
+            for row in base..<cursor[0] - 1 {
+                allTextAttr[row] = [textAttr(char: "", color: currColor, previous: false)]
+            }
+            // カーソル行のカーソルより前を空白に置き換える
+            for column in 0..<cursor[1] {
+                allTextAttr[cursor[0] - 1][column].char = " "
+            }
+        default:
+            print("Invalid Number")
+            return
+        }
+    }
+    
+    // 行消去関数(カーソル位置は移動しない)
+    // n : 消去範囲指定
+    // 0 : カーソルより後ろを消去する, 1 : カーソルより前を消去する, 2 : 行全体を消去する
+    func escLineDelete(n: Int) {
+        print("--- escLineDelete ---")
+        print("n : \(n)")
+        print("cursor : \(cursor)")
+        switch n {
+        case 0:
+            // カーソルより後ろを消去する
+            allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1].prefix(cursor[1]))
+        case 1:
+            // カーソルより前を空白に置き換える
+            for column in 0..<cursor[1] - 1 {
+                allTextAttr[cursor[0] - 1][column].char = " "
+            }
+        case 2:
+            // カーソルより後ろを消去する
+            allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1].prefix(cursor[1]))
+            // カーソル前を空白に置き換える
+            for column in 0..<cursor[1] {
+                allTextAttr[cursor[0] - 1][column].char = " "
+            }
+        default:
+            print("Invalid Number")
+            return
+        }
     }
     
     /* Central関連メソッド */
@@ -910,6 +962,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 書き込み位置を表示する
         view()
         
+        // 基底位置保存一時変数
+        var tempBase = 0
+        
         // 複数文字届いたときは一字ずつ処理する
         var tempSaveData = dataString!
         for _ in 0..<tempSaveData.count {
@@ -930,7 +985,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     if dataString! == "[" {
                         escSeq = 2
                     }
-                        // シーケンスではなかったとき
+                    // シーケンスではなかったとき
                     else {
                         print("NO ESC_SEQ")
                         escSeq = 0
@@ -942,9 +997,127 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         // 変位を記憶する
                         escDisplace[0] = Int(dataString!)!
                         escSeq = 3
+                        print("nowDisplace : \(escDisplace)")
+                        break
                     }
-                        // シーケンスではなかったとき
-                    else {
+                    switch dataString! {
+                    // 正しいシーケンスのとき
+                    // 上に1移動する
+                    case "A":
+                        var n = 1
+                        print("n : \(n)")
+                        print("cursor[0] : \(cursor[0])")
+                        print("base : \(base)")
+                        // 現在の基底位置を退避する
+                        tempBase = base
+                        // 行単位に構成する
+                        base = textLineUnit()
+                        // 移動上限を定める
+                        if n >= cursor[0] - base {
+                            n = cursor[0] - base - 1
+                        }
+                        escUp(n: n)
+                        // viewSize[1]の大きさに構成する
+                        textResize()
+                        escSeq = 0
+                        // 基底位置を元に戻す
+                        base = tempBase
+                    // 下に1移動する
+                    case "B":
+                        var n = 1
+                        print("n : \(n)")
+                        print("cursor[0] : \(cursor[0])")
+                        print("base : \(base)")
+                        print("viewSize[0] : \(viewSize[0])")
+                        // 現在の基底位置を退避する
+                        tempBase = base
+                        // 行単位に構成する
+                        base = textLineUnit()
+                        // 移動上限を定める
+                        if n  > (base + viewSize[0]) - cursor[0] {
+                            n = (base + viewSize[0]) - cursor[0]
+                        }
+                        escDown(n: n)
+                        // viewSize[1]の大きさに構成する
+                        textResize()
+                        escSeq = 0
+                        // 基底位置を元に戻す
+                        base = tempBase
+                    // 右に1移動する
+                    case "C":
+                        // 行単位に構成する
+                        textLineUnit()
+                        escRight(n: 1)
+                        // viewSize[1]の大きさに構成する
+                        textResize()
+                        escSeq = 0
+                    // 左に1移動する
+                    case "D":
+                        // 行単位に構成する
+                        textLineUnit()
+                        escLeft(n: 1)
+                        // viewSize[1]の大きさに構成する
+                        textResize()
+                        escSeq = 0
+                    // 1行下の先頭に移動する
+                    case "E":
+                        var n = 1
+                        print("n : \(n)")
+                        print("cursor[0] : \(cursor[0])")
+                        print("base : \(base)")
+                        print("viewSize[0] : \(viewSize[0])")
+                        // 現在の基底位置を退避する
+                        tempBase = base
+                        // 行単位に構成する
+                        base = textLineUnit()
+                        // 移動上限を定める
+                        if n  > (base + viewSize[0]) - cursor[0] {
+                            n = (base + viewSize[0]) - cursor[0]
+                        }
+                        escDownTop(n: n)
+                        // viewSize[1]の大きさに構成する
+                        textResize()
+                        escSeq = 0
+                        // 基底位置を元に戻す
+                        base = tempBase
+                    // 1行上の先頭に移動する
+                    case "F":
+                        var n = 1
+                        print("n : \(n)")
+                        print("cursor[0] : \(cursor[0])")
+                        print("base : \(base)")
+                        // 現在の基底位置を退避する
+                        tempBase = base
+                        // 行単位に構成する
+                        base = textLineUnit()
+                        // 移動上限を定める
+                        if n >= cursor[0] - base {
+                            n = cursor[0] - base - 1
+                        }
+                        escUpTop(n: n)
+                        // viewSize[1]の大きさに構成する
+                        textResize()
+                        escSeq = 0
+                        // 基底位置を元に戻す
+                        base = tempBase
+                    // 画面を消去する
+                    case "J":
+                        // 行単位に構成する
+                        textLineUnit()
+                        escViewDelete(n: 0)
+                        // viewSize[1]の大きさに構成する
+                        textResize()
+                        escSeq = 0
+                    // 行を消去する
+                    case "K":
+                        // 行単位に構成する
+                        textLineUnit()
+                        escLineDelete(n: 0)
+                        // viewSize[1]の大きさに構成する
+                        textResize()
+                        escSeq = 0
+                    // シーケンスではなかったとき
+                    default:
                         print("NO ESC_SEQ")
                         escSeq = 0
                     }
@@ -954,39 +1127,55 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     if dataString!.isNumeric(dataString!) {
                         // 変位に追加する
                         escDisplace[0] = escDisplace[0] * 10 + Int(dataString!)!
+                        print("nowDisplace : \(escDisplace)")
                         break
                     }
                     switch dataString! {
                     // 正しいシーケンスのとき
+                    // 上にn移動する
                     case "A":
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
+                        // 現在の基底位置を退避する
+                        tempBase = base
+                        // 行単位に構成する
+                        base = textLineUnit()
                         print("base : \(base)")
+                        // 移動上限を定める
                         if n >= cursor[0] - base {
                             n = cursor[0] - base - 1
+                            print("change n : \(n)")
                         }
-                        // 行単位に構成する
-                        textLineUnit()
                         escUp(n: n)
                         // viewSize[1]の大きさに構成する
                         textResize()
                         escSeq = 0
+                        // 基底位置を元に戻す
+                        base = tempBase
+                    // 下にn移動する
                     case "B":
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
-                        print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
+                        // 現在の基底位置を退避する
+                        tempBase = base
+                        // 行単位に構成する
+                        base = textLineUnit()
+                        print("base : \(base)")
+                        // 移動上限を定める
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
+                            print("change n : \(n)")
                         }
-                        // 行単位に構成する
-                        textLineUnit()
                         escDown(n: n)
                         // viewSize[1]の大きさに構成する
                         textResize()
                         escSeq = 0
+                        // 基底位置を元に戻す
+                        base = tempBase
+                    // 右にn移動する
                     case "C":
                         // 行単位に構成する
                         textLineUnit()
@@ -994,44 +1183,56 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         // viewSize[1]の大きさに構成する
                         textResize()
                         escSeq = 0
+                    // 左にn移動する
                     case "D":
                         // 行単位に構成する
                         textLineUnit()
                         escLeft(n: escDisplace[0])
                         // viewSize[1]の大きさに構成する
                         textResize()
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
+                    // n行下の先頭に移動する
                     case "E":
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
                         print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
+                        // 現在の基底位置を退避する
+                        tempBase = base
+                        // 行単位に構成する
+                        base = textLineUnit()
+                        // 移動上限を定める
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
                         }
-                        // 行単位に構成する
-                        textLineUnit()
                         escDownTop(n: n)
                         // viewSize[1]の大きさに構成する
                         textResize()
                         escSeq = 0
+                        // 基底位置を元に戻す
+                        base = tempBase
+                    // n行上の先頭に移動する
                     case "F":
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
                         print("base : \(base)")
+                        // 現在の基底位置を退避する
+                        tempBase = base
+                        // 行単位に構成する
+                        base = textLineUnit()
+                        // 移動上限を定める
                         if n >= cursor[0] - base {
                             n = cursor[0] - base - 1
                         }
-                        // 行単位に構成する
-                        textLineUnit()
                         escUpTop(n: n)
                         // viewSize[1]の大きさに構成する
                         textResize()
                         escSeq = 0
+                        // 基底位置を元に戻す
+                        base = tempBase
+                    // 現在位置と関係なく左からnの位置に移動する
                     case "G":
                         // 行単位に構成する
                         textLineUnit()
@@ -1039,8 +1240,41 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         // viewSize[1]の大きさに構成する
                         textResize()
                         escSeq = 0
+                    // 画面を消去する
+                    case "J":
+                        let n = escDisplace[0]
+                        print("n : \(n)")
+                        // 引数とする値が定義されていないとき
+                        if n < 0 || n > 2 {
+                            print("NO ESC_SEQ")
+                            escSeq = 0
+                            return
+                        }
+                        // 行単位に構成する
+                        textLineUnit()
+                        escViewDelete(n: n)
+                        // viewSize[1]の大きさに構成する
+                        textResize()
+                        escSeq = 0
+                    // 行を消去する
+                    case "K":
+                        let n = escDisplace[0]
+                        print("n : \(n)")
+                        // 引数とする値が定義されていないとき
+                        if n < 0 || n > 2 {
+                            print("NO ESC_SEQ")
+                            escSeq = 0
+                            return
+                        }
+                        // 行単位に構成する
+                        textLineUnit()
+                        escLineDelete(n: n)
+                        // viewSize[1]の大きさに構成する
+                        textResize()
+                        escSeq = 0
                     case ";":
                         escSeq = 4
+                    // 出力色を変更する
                     case "m":
                         if escDisplace[0] >= 30 && escDisplace [0] <= 37 {
                             changeColor(color: escDisplace[0])
@@ -1061,8 +1295,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         // 変位を記憶する
                         escDisplace[1] = Int(dataString!)!
                         escSeq = 5
+                        print("nowDisplace : \(escDisplace)")
                     }
-                        // シーケンスではなかったとき
+                    // シーケンスではなかったとき
                     else {
                         print("NO ESC_SEQ")
                         escSeq = 0
@@ -1073,18 +1308,22 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     if dataString!.isNumeric(dataString!) {
                         // 変位に追加する
                         escDisplace[1] = escDisplace[1] * 10 + Int(dataString!)!
+                        print("nowDisplace : \(escDisplace)")
                         break
                     }
                     // 正しいシーケンスのとき
+                    // 現在位置と関係なく上からn,左からmの位置に移動する
                     if dataString! == "H" || dataString! == "f" {
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
+                        // 行単位に構成する
+                        textLineUnit()
+                        // 移動上限を定める
                         if n > viewSize[0] {
                             n = viewSize[0]
                         }
-                        // 行単位に構成する
                         escRoot(n: n + base, m: escDisplace[1])
                         // viewSize[1]の大きさに構成する
                         textResize()
@@ -1098,11 +1337,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 default: break
                 }
             }
-                // エスケープのとき
+            // エスケープのとき
             else if dataString! == "\u{1b}" {
                 escSeq = 1
             }
-                // それ以外のとき
+            // それ以外のとき
             else {
                 // textViewに読み込みデータを書き込む
                 writeTextView(dataString!)
@@ -1176,7 +1415,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // 折り返しのとき
         if allTextAttr[cursor[0] - 1].count == viewSize[1] {
-            print("flapped")
             // カーソルが最後行にあるとき
             if cursor[0] == allTextAttr.count {
                 print("cursor is last")
@@ -1225,6 +1463,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             else {
                 // カーソルをずらす
                 cursor[1] += 1
+            }
+            // カーソルが基底から数えて最大行数を超えたとき
+            if cursor[0] > base + viewSize[0] {
+                base += 1
             }
         }
         // 折り返ししないとき
@@ -1318,7 +1560,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
                 // 行が変わらないとき
                 if allTextAttr[cursor[0]][0].previous {
-                    print("combine")
                     // カーソル行の末尾を削除する
                     allTextAttr[cursor[0] - 1].removeLast()
                     // 文字列を上にずらすためのフラグを立てる
@@ -1464,19 +1705,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             //  スクロール表示の基底位置にする
             row = viewBase
         }
-        print("row : \(row)")
+        print("base: \(row)")
         print("allTextAttr.count : \(allTextAttr.count)")
         print("viewSize[0] : \(viewSize[0])")
-        var limit = viewSize[0]
         // 基底位置から最大行数またはテキスト行数だけ繰り返す
-        while row < base + limit && row < allTextAttr.count {
-            
-            // 折り返しがあるとき
-            if allTextAttr[row].count > viewSize[1] {
-                print("returnLine")
-                limit -= allTextAttr[row].count / viewSize[1]
-            }
-            
+        while row < base + viewSize[0] && row < allTextAttr.count {
             // 各行の文字数だけ繰り返す
             for column in 0..<allTextAttr[row].count {
                 // 背景色を設定する
@@ -1619,7 +1852,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // カーソルより後ろの空文字列の削除
         print("cursor : \(cursor)")
-        print("refreshText : \(refreshText)")
         var row = refreshText.count - 1
         var count = 0
         print("row : \(row)")
@@ -1660,6 +1892,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         textLineUnit()
         // viewSize[1]の大きさの配列に構成する
         var newText = [[textAttr]]()
+        var tempCursor = cursor
         for row in 0..<allTextAttr.count {
             // 行頭の文字を追加する
             newText.append([allTextAttr[row][0]])
@@ -1675,54 +1908,66 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     newText[newText.count - 1].append(allTextAttr[row][column])
                 }
                 if cursor == [row + 1, column + 1] {
-                    cursor = [newText.count, newText[newText.count - 1].count]
+                    tempCursor = [newText.count, newText[newText.count - 1].count]
                     print("cursor change")
-                    print("cursor : \(cursor)")
+                    print("cursor : \(tempCursor)")
                 }
             }
         }
         // 新しい配列をallTextAttrにする
         allTextAttr = newText
+        // カーソルを変更する
+        cursor = tempCursor
         viewChar(allTextAttr)
     }
     
     // allTextAttr配列を行単位の大きさで作り変える関数
-    func textLineUnit() {
+    // 返り値 : 行単位構成での基底位置
+    @discardableResult
+    func textLineUnit() -> Int {
         print("--- textLineUnit ---")
         print("preChar")
         viewChar(allTextAttr)
         print("cursor : \(cursor)")
+        var newBase = 0
         // 行単位に構成する
         var newText = [[textAttr]]()
+        var tempCursor = cursor
         newText.append(allTextAttr[0])
         for row in 1..<allTextAttr.count {
             print("row : \(row)")
             // 一行内のとき
-            if allTextAttr[row][0].previous == true {
+            if allTextAttr[row][0].previous {
                 print("sameLine")
                 // 最後行に付け加える
                 newText[newText.count - 1] = newText[newText.count - 1] + allTextAttr[row]
-                // カーソル行のとき
-                if row == cursor[0] - 1 {
-                    cursor[0] = newText.count
-                    cursor[1] = (newText[newText.count - 1].count - allTextAttr[row].count) + cursor[1]
-                }
             }
             // 行が変わるとき
             else {
                 print("changeLine")
                 // 行を付け足す
                 newText.append(allTextAttr[row])
-                // カーソル行のとき
-                if row == cursor[0] - 1 {
-                    cursor[0] = newText.count
-                }
+            }
+            // カーソル行のとき
+            if row == cursor[0] - 1 {
+                // カーソルをずらす
+                tempCursor[0] = newText.count
+                tempCursor[1] = (newText[newText.count - 1].count - allTextAttr[row].count) + cursor[1]
+            }
+            // 基底位置のとき
+            if row == base {
+                // 新しい基底位置を登録する
+                newBase = newText.count - 1
             }
         }
         // 新しい配列をallTextAttrにする
         allTextAttr = newText
+        // カーソルを変更する
+        cursor = tempCursor
         print("aftChar")
         viewChar(allTextAttr)
+        // 新しい基底位置を返す
+        return newBase
     }
     
     // textviewをクリアする関数
@@ -1736,9 +1981,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         toast = false
         // トーストメッセージを初期化する
         tempToastMessage = ""
-        
-        // 折り返しフラグを初期化する
-        flap = false
         
         // カーソル基底を初期化する
         base = 0

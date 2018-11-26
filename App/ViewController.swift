@@ -745,8 +745,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         case 0:
             // カーソル行より後ろを消去する
             allTextAttr = Array(allTextAttr.prefix(cursor[0]))
+            let cursorPrev = allTextAttr[cursor[0] - 1][cursor[1] - 1].previous
             // カーソル行のカーソルより後ろを消去する
-            allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1].prefix(cursor[1]))
+            allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1].prefix(cursor[1] - 1))
+            // カーソル文字を追加する
+            allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor, previous: cursorPrev))
         // カーソルより前を消去する
         case 1:
             // カーソル行より前を消去する
@@ -754,7 +757,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 allTextAttr[row] = [textAttr(char: "", color: currColor, previous: false)]
             }
             // カーソル行のカーソルより前を空白に置き換える
-            for column in 0..<cursor[1] - 1 {
+            for column in 0..<cursor[1] {
                 allTextAttr[cursor[0] - 1][column].char = " "
             }
         // 画面全体を消去する
@@ -784,13 +787,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- escLineDelete ---")
         print("n : \(n)")
         print("cursor : \(cursor)")
+        print("allTextAttr.count : \(allTextAttr.count)")
+        print("allTextAttr[cursor[0] - 1].count : \(allTextAttr[cursor[0] - 1].count)")
         switch n {
         case 0:
+            let cursorPrev = allTextAttr[cursor[0] - 1][cursor[1] - 1].previous
             // カーソルより後ろを消去する
-            allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1].prefix(cursor[1]))
+            allTextAttr[cursor[0] - 1] = Array(allTextAttr[cursor[0] - 1].prefix(cursor[1] - 1))
+            // カーソル文字を追加する
+            allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor, previous: cursorPrev))
         case 1:
             // カーソルより前を空白に置き換える
-            for column in 0..<cursor[1] - 1 {
+            for column in 0..<cursor[1] {
                 allTextAttr[cursor[0] - 1][column].char = " "
             }
         case 2:
@@ -1008,20 +1016,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
                         print("base : \(base)")
-                        // 現在の基底位置を退避する
-                        tempBase = base
-                        // 行単位に構成する
-                        base = textLineUnit()
                         // 移動上限を定める
                         if n >= cursor[0] - base {
                             n = cursor[0] - base - 1
                         }
                         escUp(n: n)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
-                        // 基底位置を元に戻す
-                        base = tempBase
                     // 下に1移動する
                     case "B":
                         var n = 1
@@ -1029,22 +1029,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         print("cursor[0] : \(cursor[0])")
                         print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
-                        // 現在の基底位置を退避する
-                        tempBase = base
-                        // 行単位に構成する
-                        base = textLineUnit(sizeChange: true)
                         // 移動上限を定める
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
                         }
-                        // viewSizeを元に戻す
-                        setSize(resize: false)
                         escDown(n: n)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
-                        // 基底位置を元に戻す
-                        base = tempBase
                     // 右に1移動する
                     case "C":
                         // 行単位に構成する
@@ -1068,42 +1058,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         print("cursor[0] : \(cursor[0])")
                         print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
-                        // 現在の基底位置を退避する
-                        tempBase = base
-                        // 行単位に構成する
-                        base = textLineUnit(sizeChange: true)
                         // 移動上限を定める
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
                         }
-                        // viewSizeを元に戻す
-                        setSize(resize: false)
                         escDownTop(n: n)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
-                        // 基底位置を元に戻す
-                        base = tempBase
                     // 1行上の先頭に移動する
                     case "F":
                         var n = 1
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
                         print("base : \(base)")
-                        // 現在の基底位置を退避する
-                        tempBase = base
-                        // 行単位に構成する
-                        base = textLineUnit()
                         // 移動上限を定める
                         if n >= cursor[0] - base {
                             n = cursor[0] - base - 1
                         }
                         escUpTop(n: n)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
-                        // 基底位置を元に戻す
-                        base = tempBase
                     // 画面を消去する
                     case "J":
                         // 行単位に構成する
@@ -1114,11 +1086,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         escSeq = 0
                     // 行を消去する
                     case "K":
-                        // 行単位に構成する
-                        textLineUnit()
                         escLineDelete(n: 0)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
                     // シーケンスではなかったとき
                     default:
@@ -1141,10 +1109,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
-                        // 現在の基底位置を退避する
-                        tempBase = base
-                        // 行単位に構成する
-                        base = textLineUnit()
                         print("base : \(base)")
                         // 移動上限を定める
                         if n >= cursor[0] - base {
@@ -1152,50 +1116,32 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             print("change n : \(n)")
                         }
                         escUp(n: n)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
-                        // 基底位置を元に戻す
-                        base = tempBase
                     // 下にn移動する
                     case "B":
                         var n = escDisplace[0]
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
                         print("viewSize[0] : \(viewSize[0])")
-                        // 現在の基底位置を退避する
-                        tempBase = base
-                        // 行単位に構成する
-                        base = textLineUnit(sizeChange: true)
                         print("base : \(base)")
                         // 移動上限を定める
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
                             print("change n : \(n)")
                         }
-                        // viewSizeを元に戻す
-                        setSize(resize: false)
                         escDown(n: n)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
-                        // 基底位置を元に戻す
-                        base = tempBase
                     // 右にn移動する
                     case "C":
-                        // 行単位に構成する
-                        textLineUnit()
-                        escRight(n: escDisplace[0])
-                        // viewSize[1]の大きさに構成する
-                        textResize()
+                        var n = escDisplace[0]
+                        if n > viewSize[1] - cursor[1] {
+                            n = viewSize[1] - cursor[1]
+                        }
+                        escRight(n: n)
                         escSeq = 0
                     // 左にn移動する
                     case "D":
-                        // 行単位に構成する
-                        textLineUnit()
                         escLeft(n: escDisplace[0])
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
                     // n行下の先頭に移動する
                     case "E":
@@ -1204,19 +1150,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         print("cursor[0] : \(cursor[0])")
                         print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
-                        // 現在の基底位置を退避する
-                        tempBase = base
-                        // 行単位に構成する
-                        base = textLineUnit(sizeChange: true)
                         // 移動上限を定める
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
                         }
-                        // viewSizeを元に戻す
-                        setSize(resize: false)
                         escDownTop(n: n)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
                         // 基底位置を元に戻す
                         base = tempBase
@@ -1226,27 +1164,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         print("n : \(n)")
                         print("cursor[0] : \(cursor[0])")
                         print("base : \(base)")
-                        // 現在の基底位置を退避する
-                        tempBase = base
-                        // 行単位に構成する
-                        base = textLineUnit()
                         // 移動上限を定める
                         if n >= cursor[0] - base {
                             n = cursor[0] - base - 1
                         }
                         escUpTop(n: n)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
-                        // 基底位置を元に戻す
-                        base = tempBase
                     // 現在位置と関係なく左からnの位置に移動する
                     case "G":
-                        // 行単位に構成する
-                        textLineUnit()
                         escRoot(n: cursor[0], m: escDisplace[0])
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
                     // 画面を消去する
                     case "J":
@@ -1276,11 +1202,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             escSeq = 0
                             return
                         }
-                        // 行単位に構成する
-                        textLineUnit()
                         escLineDelete(n: n)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
                     case ";":
                         escSeq = 4
@@ -1328,19 +1250,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         print("n : \(n)")
                         print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
-                        // 現在の基底位置を退避する
-                        tempBase = base
-                        // 行単位に構成する
-                        base = textLineUnit(sizeChange: true)
                         // 移動上限を定める
                         if n > viewSize[0] {
                             n = viewSize[0]
                         }
-                        // viewSizeを元に戻す
-                        setSize(resize: false)
                         escRoot(n: n + base, m: escDisplace[1])
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
                     }
                     // シーケンスではなかったとき

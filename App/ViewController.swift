@@ -787,8 +787,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- escLineDelete ---")
         print("n : \(n)")
         print("cursor : \(cursor)")
-        print("allTextAttr.count : \(allTextAttr.count)")
-        print("allTextAttr[cursor[0] - 1].count : \(allTextAttr[cursor[0] - 1].count)")
         switch n {
         case 0:
             let cursorPrev = allTextAttr[cursor[0] - 1][cursor[1] - 1].previous

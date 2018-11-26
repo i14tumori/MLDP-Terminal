@@ -482,7 +482,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // 画面サイズを設定する関数
-    func setSize() {
+    // resize : 配列の再作成判定
+    func setSize(resize: Bool = true) {
         print("--- setSize ---")
         // 最大行数
         let row = Int(floor((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!)))
@@ -493,7 +494,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 記憶する
         viewSize = [row, column]
         // すでに文字が登録されているとき
-        if allTextAttr.count != 0 {
+        if allTextAttr.count != 0 && resize {
             // allTextAttr配列を作り変える
             textResize()
             // 更新を反映する
@@ -585,7 +586,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func escRight(n: Int) {
         print("--- escRight ---")
         print("n : \(n)")
-        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        print("cursor : \(cursor)")
         // 移動がないとき(n = 0)
         if n == 0 {
             return
@@ -701,7 +702,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             move = cursor[0] - 1
         }
         print("move : \(move)")
-        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        print("cursor : \(cursor)")
         // カーソルをずらす
         cursor[0] = cursor[0] - move
         cursor[1] = 1
@@ -945,7 +946,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         
         print("--- peripheral Update ---")
-        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        print("cursor : \(cursor)")
         
         //  読み込みデータの取り出し
         let data = characteristic.value
@@ -1358,7 +1359,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func writeTextView(_ string: String) {
         print("--- writeTextView ---")
         print("string : \(string)")
-        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        print("cursor : \(cursor)")
         
         // 改行なら次の行の準備とカーソル文字の削除をして返る
         if string == "\r" || string == "\n" {
@@ -1690,9 +1691,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // 画面表示する関数
-    func view(scroll type: Bool = false) {
+    func view(scroll: Bool = false) {
         print("--- view ---")
-        print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
+        print("cursor : \(cursor)")
+        print("scroll : \(scroll)")
         
         let text = NSMutableAttributedString()
         var attributes: [NSAttributedStringKey : Any]
@@ -1701,15 +1703,39 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 基底位置を取得する
         var row = base
         // スクロールのとき
-        if type {
+        if scroll {
             //  スクロール表示の基底位置にする
             row = viewBase
         }
-        print("base: \(row)")
+        // カーソル位置表示のとき
+        else {
+            // カーソルが表示範囲から外れたとき
+            // 上側に外れたとき
+            if cursor[0] - 1 < row {
+                print("upOut")
+                base = cursor[0] - 1
+                while allTextAttr[base][0].previous {
+                    base -= 1
+                }
+                row = base
+            }
+            // 下側に外れたとき
+            else if cursor[0] - 1 > row + viewSize[0] {
+                print("downOut")
+                base = cursor[0] - viewSize[0]
+                while cursor[0] < allTextAttr.count && allTextAttr[cursor[0]][0].previous {
+                    base += 1
+                }
+                row = base
+            }
+        }
+        print("base : \(base)")
+        print("row : \(row)")
         print("allTextAttr.count : \(allTextAttr.count)")
         print("viewSize[0] : \(viewSize[0])")
+        let bias = row
         // 基底位置から最大行数またはテキスト行数だけ繰り返す
-        while row < base + viewSize[0] && row < allTextAttr.count {
+        while row < bias + viewSize[0] && row < allTextAttr.count {
             // 各行の文字数だけ繰り返す
             for column in 0..<allTextAttr[row].count {
                 // 背景色を設定する
@@ -1748,7 +1774,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 返り値 : 最後尾 -> true, それ以外 -> false
     func curIsEnd() -> Bool {
         print("--- curIsEnd ---")
-        print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
+        print("cursor : \(cursor)")
         
         // カーソルが最後尾を示しているとき
         if curIsSentenceEnd() && cursor[0] == allTextAttr.count {
@@ -1761,7 +1787,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 返り値 : 文末->true, それ以外->false
     func curIsSentenceEnd() -> Bool {
         print("--- curIsSentenceEnd ---")
-        print("cursor : [ \(cursor[0]) , \(cursor[1]) ]")
+        print("cursor : \(cursor)")
         
         // カーソルが文末を示しているとき
         if cursor[1] == allTextAttr[cursor[0] - 1].count && allTextAttr[cursor[0] - 1][cursor[1] - 1].char == "_" {
@@ -1776,7 +1802,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 返り値 : カーソルの示す文字
     func getCurrChar() -> String {
         print("--- getCurrChar ---")
-        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        print("cursor : \(cursor)")
         print("return : \(allTextAttr[cursor[0] - 1][cursor[1] - 1].char)")
         // カーソルの示す位置の文字を返す
         return allTextAttr[cursor[0] - 1][cursor[1] - 1].char
@@ -1786,7 +1812,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 返り値 : previous属性値(Bool型)
     func getCurrPrev() -> Bool {
         print("--- getCurrPrev ---")
-        print("cursor : [ \(cursor[0]), \(cursor[1]) ]")
+        print("cursor : \(cursor)")
         print("return : \(allTextAttr[cursor[0] - 1][cursor[1] - 1].previous)")
         // カーソルの示す位置のprevious属性を返す
         return allTextAttr[cursor[0] - 1][cursor[1] - 1].previous
@@ -1923,6 +1949,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // allTextAttr配列を行単位の大きさで作り変える関数
     // 返り値 : 行単位構成での基底位置
+    // @discardableResult : 返り値を使用しないことを許す
     @discardableResult
     func textLineUnit() -> Int {
         print("--- textLineUnit ---")

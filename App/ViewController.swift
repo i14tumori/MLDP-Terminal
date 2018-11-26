@@ -620,7 +620,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             // カーソル文字を追加する
             allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor))
-            print("curText : \(allTextAttr[cursor[0] - 1])")
         }
         refresh()
     }
@@ -1033,11 +1032,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         // 現在の基底位置を退避する
                         tempBase = base
                         // 行単位に構成する
-                        base = textLineUnit()
+                        base = textLineUnit(sizeChange: true)
                         // 移動上限を定める
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
                         }
+                        // viewSizeを元に戻す
+                        setSize(resize: false)
                         escDown(n: n)
                         // viewSize[1]の大きさに構成する
                         textResize()
@@ -1070,11 +1071,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         // 現在の基底位置を退避する
                         tempBase = base
                         // 行単位に構成する
-                        base = textLineUnit()
+                        base = textLineUnit(sizeChange: true)
                         // 移動上限を定める
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
                         }
+                        // viewSizeを元に戻す
+                        setSize(resize: false)
                         escDownTop(n: n)
                         // viewSize[1]の大きさに構成する
                         textResize()
@@ -1163,13 +1166,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         // 現在の基底位置を退避する
                         tempBase = base
                         // 行単位に構成する
-                        base = textLineUnit()
+                        base = textLineUnit(sizeChange: true)
                         print("base : \(base)")
                         // 移動上限を定める
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
                             print("change n : \(n)")
                         }
+                        // viewSizeを元に戻す
+                        setSize(resize: false)
                         escDown(n: n)
                         // viewSize[1]の大きさに構成する
                         textResize()
@@ -1202,11 +1207,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         // 現在の基底位置を退避する
                         tempBase = base
                         // 行単位に構成する
-                        base = textLineUnit()
+                        base = textLineUnit(sizeChange: true)
                         // 移動上限を定める
                         if n  > (base + viewSize[0]) - cursor[0] {
                             n = (base + viewSize[0]) - cursor[0]
                         }
+                        // viewSizeを元に戻す
+                        setSize(resize: false)
                         escDownTop(n: n)
                         // viewSize[1]の大きさに構成する
                         textResize()
@@ -1251,8 +1258,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             escSeq = 0
                             return
                         }
+                        // 現在の基底位置を退避する
+                        tempBase = base
                         // 行単位に構成する
-                        textLineUnit()
+                        base = textLineUnit()
                         escViewDelete(n: n)
                         // viewSize[1]の大きさに構成する
                         textResize()
@@ -1319,12 +1328,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         print("n : \(n)")
                         print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
+                        // 現在の基底位置を退避する
+                        tempBase = base
                         // 行単位に構成する
-                        textLineUnit()
+                        base = textLineUnit(sizeChange: true)
                         // 移動上限を定める
                         if n > viewSize[0] {
                             n = viewSize[0]
                         }
+                        // viewSizeを元に戻す
+                        setSize(resize: false)
                         escRoot(n: n + base, m: escDisplace[1])
                         // viewSize[1]の大きさに構成する
                         textResize()
@@ -1695,6 +1708,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- view ---")
         print("cursor : \(cursor)")
         print("scroll : \(scroll)")
+        print("pre base : \(base)")
         
         let text = NSMutableAttributedString()
         var attributes: [NSAttributedStringKey : Any]
@@ -1706,28 +1720,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if scroll {
             //  スクロール表示の基底位置にする
             row = viewBase
-        }
-        // カーソル位置表示のとき
-        else {
-            // カーソルが表示範囲から外れたとき
-            // 上側に外れたとき
-            if cursor[0] - 1 < row {
-                print("upOut")
-                base = cursor[0] - 1
-                while allTextAttr[base][0].previous {
-                    base -= 1
-                }
-                row = base
-            }
-            // 下側に外れたとき
-            else if cursor[0] - 1 > row + viewSize[0] {
-                print("downOut")
-                base = cursor[0] - viewSize[0]
-                while cursor[0] < allTextAttr.count && allTextAttr[cursor[0]][0].previous {
-                    base += 1
-                }
-                row = base
-            }
         }
         print("base : \(base)")
         print("row : \(row)")
@@ -1948,10 +1940,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // allTextAttr配列を行単位の大きさで作り変える関数
+    // sizeChange : viewSize[0]の大きさ変更判定
     // 返り値 : 行単位構成での基底位置
     // @discardableResult : 返り値を使用しないことを許す
     @discardableResult
-    func textLineUnit() -> Int {
+    func textLineUnit(sizeChange: Bool = false) -> Int {
         print("--- textLineUnit ---")
         print("preChar")
         viewChar(allTextAttr)
@@ -1965,13 +1958,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             print("row : \(row)")
             // 一行内のとき
             if allTextAttr[row][0].previous {
-                print("sameLine")
                 // 最後行に付け加える
                 newText[newText.count - 1] = newText[newText.count - 1] + allTextAttr[row]
+                // viewSize[0]を変更する
+                if sizeChange && row - 1 > base {
+                    viewSize[0] -= 1
+                }
             }
             // 行が変わるとき
             else {
-                print("changeLine")
                 // 行を付け足す
                 newText.append(allTextAttr[row])
             }
@@ -2025,6 +2020,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("cursor : \(cursor)")
         let allTextAttr = text
         var text = [String]()
+        var prev = [[Int]]()
         for row in 0..<allTextAttr.count {
             text.append("")
             for column in 0..<allTextAttr[row].count {
@@ -2032,9 +2028,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     print("allTextAttr[\(row)][\(column)].char is empty")
                 }
                 text[text.count - 1].append(allTextAttr[row][column].char)
+                if !allTextAttr[row][column].previous {
+                    prev.append([row, column])
+                }
             }
         }
+        print("text")
         print(text)
+        print("line top")
+        print(prev)
     }
 }
 

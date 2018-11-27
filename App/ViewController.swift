@@ -968,9 +968,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 書き込み位置を表示する
         view()
         
-        // 基底位置保存一時変数
-        var tempBase = 0
-        
         // 複数文字届いたときは一字ずつ処理する
         var tempSaveData = dataString!
         for _ in 0..<tempSaveData.count {
@@ -1074,13 +1071,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         }
                         escUpTop(n: n)
                         escSeq = 0
+                    // 最左に移動する
+                    case "G":
+                        var m = 1
+                        print("m : \(m)")
+                        print("viewSize[1] : \(viewSize[1])")
+                        // 移動上限を定める
+                        if m > viewSize[1] {
+                            m = viewSize[1]
+                        }
+                        escRoot(n: cursor[0], m: m)
+                        escSeq = 0
                     // 画面を消去する
                     case "J":
-                        // 行単位に構成する
-                        textLineUnit()
                         escViewDelete(n: 0)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
                     // 行を消去する
                     case "K":
@@ -1154,8 +1158,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         }
                         escDownTop(n: n)
                         escSeq = 0
-                        // 基底位置を元に戻す
-                        base = tempBase
                     // n行上の先頭に移動する
                     case "F":
                         var n = escDisplace[0]
@@ -1170,7 +1172,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         escSeq = 0
                     // 現在位置と関係なく左からnの位置に移動する
                     case "G":
-                        escRoot(n: cursor[0], m: escDisplace[0])
+                        var n = escDisplace[1]
+                        print("n : \(n)")
+                        print("viewSize[1] : \(viewSize[1])")
+                        // 移動上限を定める
+                        if n > viewSize[1] {
+                            n = viewSize[1]
+                        }
+                        else if n == 0 {
+                            n = 1
+                        }
+                        escRoot(n: cursor[0], m: n)
                         escSeq = 0
                     // 画面を消去する
                     case "J":
@@ -1182,13 +1194,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             escSeq = 0
                             return
                         }
-                        // 現在の基底位置を退避する
-                        tempBase = base
-                        // 行単位に構成する
-                        base = textLineUnit()
                         escViewDelete(n: n)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
                     // 行を消去する
                     case "K":
@@ -1245,14 +1251,26 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     // 現在位置と関係なく上からn,左からmの位置に移動する
                     if dataString! == "H" || dataString! == "f" {
                         var n = escDisplace[0]
+                        var m = escDisplace[1]
                         print("n : \(n)")
+                        print("m : \(m)")
                         print("base : \(base)")
                         print("viewSize[0] : \(viewSize[0])")
+                        print("viewSize[1] : \(viewSize[1])")
                         // 移動上限を定める
                         if n > viewSize[0] {
                             n = viewSize[0]
                         }
-                        escRoot(n: n + base, m: escDisplace[1])
+                        else if n == 0 {
+                            n = 1
+                        }
+                        if m > viewSize[1] {
+                            m = viewSize[1]
+                        }
+                        else if m == 0 {
+                            m = 1
+                        }
+                        escRoot(n: n + base, m: m)
                         escSeq = 0
                     }
                     // シーケンスではなかったとき
@@ -1930,6 +1948,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func viewChar(_ text: [[textAttr]]) {
         print("--- viewChar ---")
         print("cursor : \(cursor)")
+        print("viewSize : \(viewSize)")
         let allTextAttr = text
         var text = [String]()
         var prev = [[Int]]()
@@ -1941,7 +1960,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 }
                 text[text.count - 1].append(allTextAttr[row][column].char)
                 if !allTextAttr[row][column].previous {
-                    prev.append([row, column])
+                    prev.append([row + 1, column + 1])
                 }
             }
         }

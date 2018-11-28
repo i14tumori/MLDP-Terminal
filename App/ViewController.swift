@@ -29,6 +29,7 @@ extension String {
     // text : 対象文字
     func isAlphanumeric(_ text: String) -> Bool {
         print("--- isAlphanumeric ---")
+        print("return : \(text >= "\u{00}" && text <= "\u{7f}")")
         return text >= "\u{00}" && text <= "\u{7f}"
     }
     // 数字の判定をする関数
@@ -38,9 +39,11 @@ extension String {
         let partText = text.partition(text)
         for i in 0..<text.count {
             if partText[i] < "0" || partText[i] > "9" {
+                print("return : false")
                 return false
             }
         }
+        print("return : true")
         return true
     }
     // 文字列の高さを取得する関数
@@ -49,6 +52,7 @@ extension String {
     func getStringHeight(_ font: UIFont) -> CGFloat {
         let attribute = [NSAttributedStringKey.font: font]
         let size = self.size(withAttributes: attribute)
+        print("return : \(size.height)")
         return size.height
     }
     // 文字列の横幅を取得する関数
@@ -57,6 +61,7 @@ extension String {
     func getStringWidth(_ font: UIFont) -> CGFloat {
         let attribute = [NSAttributedStringKey.font: font]
         let size = self.size(withAttributes: attribute)
+        print("return : \(size.width)")
         return size.width
         
     }
@@ -115,9 +120,25 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // トーストメッセージの一時記憶変数
     var tempToastMessage = ""
     
+    // ボタン追加view
+    let keyboard = UIStackView(frame: CGRect(x: 0, y: 0, width: 320, height: 40))
+    // ボタン追加Viewの背景View
+    let buttonBackView = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 40))
+    // 追加するボタン一覧
+    let escButton = UIButton(frame: CGRect())
+    let ctrlButton = UIButton(frame: CGRect())
+    let upButton = UIButton(frame: CGRect())
+    let downButton = UIButton(frame: CGRect())
+    let leftButton = UIButton(frame: CGRect())
+    let rightButton = UIButton(frame: CGRect())
+    let keyDownButton = UIButton(frame: CGRect())
+    
+    // Ctrlボタン押下フラグ
+    var ctrlKey = false
+    
     @IBOutlet weak var textview: UITextView!
     @IBOutlet weak var menu: UIButton!
-    @IBOutlet weak var backView: UIView!
+    @IBOutlet weak var menuBackView: UIView!
     
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
@@ -136,6 +157,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // メニューを隠す
         hideMenu(duration: 0.0)
+        
+        // textviewにボタンを追加する
+        textKeyInit()
         
         // textviewに枠線をつける
         textview.layer.borderColor = UIColor.lightGray.cgColor
@@ -396,11 +420,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- hideMenu ---")
         // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
-            self.backView.center.x = 0
+            self.menuBackView.center.x = 0
         }
         // メニューを隠す
         UIView.animate(withDuration: TimeInterval(second)) {
-            self.backView.alpha = 0.0
+            self.menuBackView.alpha = 0.0
         }
     }
     
@@ -410,11 +434,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- showMenu ---")
         // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
-            self.backView.center.x = self.view.center.x - self.menu.bounds.width
+            self.menuBackView.center.x = self.view.center.x - self.menu.bounds.width
         }
         // メニューを表示する
         UIView.animate(withDuration: TimeInterval(second)) {
-            self.backView.alpha = 1.0
+            self.menuBackView.alpha = 1.0
         }
     }
     
@@ -513,6 +537,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // ペリフェラルにエスケープを書き込む
         writePeripheral("\u{1b}")
+    }
+    
+    // 追加ボタンCtrlが押されたとき
+    @objc func ctrlTapped() {
+        print("--- ctrl ---")
+        // コントロールキーフラグを反転させる
+        ctrlKey.toggle()
+        // コントロールボタンの背景を変更する
+        if ctrlKey {
+            print("ctrlKey : ON")
+            ctrlButton.backgroundColor = UIColor.white
+            ctrlButton.setTitleColor(UIColor.lightGray, for: .normal)
+        }
+        else {
+            print("ctrlKey : OFF")
+            ctrlButton.backgroundColor = UIColor.lightGray
+            ctrlButton.setTitleColor(UIColor.white, for: .normal)
+        }
     }
     
     // 追加ボタン↑が押されたとき
@@ -1434,7 +1476,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // txStr : 書き込む文字
     func writePeripheral(_ txStr: String) {
         print("--- writePeripheral ---")
-        if let txData = txStr.data(using: .utf8) {
+        if var txData = txStr.data(using: .utf8) {
+            // コントロールキーを押しているとき
+            if ctrlKey {
+                // 上位3bitをクリアする
+                var buffer = [UInt8](txData)[0] & 0b00011111
+                txData = NSData(bytes: &buffer, length: 1) as Data
+            }
             print("txData : \(String(describing: String(data: txData, encoding: .utf8)))")
             appDelegate.peripheral.writeValue(txData, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
         }
@@ -1934,6 +1982,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // トーストメッセージを初期化する
         tempToastMessage = ""
         
+        // Ctrl押下フラグを初期化する
+        ctrlKey = false
+        // 追加キーボードボタンを初期化する
+        textKeyInit()
+        
         // カーソル基底を初期化する
         base = 0
         // スクロール基底を初期化する
@@ -1942,6 +1995,72 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         cursor = [1, 1]
         // カーソル表示
         view()
+    }
+    
+    // 追加キーボードボタンを初期化する関数
+    func textKeyInit() {
+        print("--- textKeyInit ---")
+        // ボタンを追加するViewの設定
+        keyboard.axis = .horizontal
+        keyboard.alignment = .center
+        keyboard.distribution = .fillEqually
+        keyboard.spacing = 3
+        keyboard.sizeToFit()
+        
+        // ボタン追加Viewの背景用Viewの設定
+        buttonBackView.backgroundColor = UIColor.gray
+        buttonBackView.sizeToFit()
+        
+        // エスケープキーの設定
+        escButton.backgroundColor = UIColor.lightGray
+        escButton.setTitle("ESC", for: UIControlState.normal)
+        escButton.addTarget(self, action: #selector(escTapped), for: UIControlEvents.touchUpInside)
+        
+        // コントロールキーの設定
+        ctrlButton.backgroundColor = UIColor.lightGray
+        ctrlButton.setTitle("Ctrl", for: UIControlState.normal)
+        ctrlButton.addTarget(ViewController(), action: #selector(ViewController.ctrlTapped), for: UIControlEvents.touchUpInside)
+        
+        // 上矢印キーの設定
+        upButton.backgroundColor = UIColor.lightGray
+        upButton.setTitle("↑", for: UIControlState.normal)
+        upButton.addTarget(ViewController(), action: #selector(ViewController.upTapped), for: UIControlEvents.touchUpInside)
+        
+        // 下矢印キーの設定
+        downButton.backgroundColor = UIColor.lightGray
+        downButton.setTitle("↓", for: UIControlState.normal)
+        downButton.addTarget(ViewController(), action: #selector(ViewController.downTapped), for: UIControlEvents.touchUpInside)
+        
+        // 左矢印キーの設定
+        leftButton.backgroundColor = UIColor.lightGray
+        leftButton.setTitle("←", for: UIControlState.normal)
+        leftButton.addTarget(ViewController(), action: #selector(ViewController.leftTapped), for: UIControlEvents.touchUpInside)
+        
+        // 右矢印キーの設定
+        rightButton.backgroundColor = UIColor.lightGray
+        rightButton.setTitle("→", for: UIControlState.normal)
+        rightButton.addTarget(ViewController(), action: #selector(ViewController.rightTapped), for: UIControlEvents.touchUpInside)
+        
+        // キーボードダウンキーの設定
+        keyDownButton.backgroundColor = UIColor.lightGray
+        keyDownButton.setTitle("done", for: UIControlState.normal)
+        keyDownButton.addTarget(ViewController(), action: #selector(ViewController.keyboardDown), for: UIControlEvents.touchUpInside)
+        
+        
+        // ボタンをViewに追加する
+        keyboard.addArrangedSubview(escButton)
+        keyboard.addArrangedSubview(ctrlButton)
+        keyboard.addArrangedSubview(upButton)
+        keyboard.addArrangedSubview(downButton)
+        keyboard.addArrangedSubview(leftButton)
+        keyboard.addArrangedSubview(rightButton)
+        keyboard.addArrangedSubview(keyDownButton)
+        
+        // ボタンViewに背景をつける
+        buttonBackView.addSubview(keyboard)
+        
+        // textViewと紐付ける
+        textview.inputAccessoryView = buttonBackView
     }
     
     // デバッグ用関数

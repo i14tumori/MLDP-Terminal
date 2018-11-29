@@ -13,10 +13,10 @@ import CoreBluetooth
 extension String {
     // String型を一文字ずつの配列に分解する関数
     // text : 対象文字列
-    func partition(_ text: String) -> [String] {
+    func partition() -> [String] {
         print("--- partition ---")
-        let count = text.count
-        var origin = text
+        let count = self.count
+        var origin = self
         var splitText = [String]()
         for _ in 0..<count {
             splitText.append(String(origin.prefix(1)))
@@ -34,10 +34,10 @@ extension String {
     }
     // 数字の判定をする関数
     // 対象文字
-    func isNumeric(_ text: String) -> Bool {
+    func isNumeric() -> Bool {
         print("--- isNumeric ---")
-        let partText = text.partition(text)
-        for i in 0..<text.count {
+        let partText = self.partition()
+        for i in 0..<self.count {
             if partText[i] < "0" || partText[i] > "9" {
                 print("return : false")
                 return false
@@ -1038,7 +1038,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // シーケンス二文字目
                 case 2:
                     // 正しいシーケンスのとき
-                    if dataString!.isNumeric(dataString!) {
+                    if dataString!.isNumeric() {
                         // 変位を記憶する
                         escDisplace[0] = Int(dataString!)!
                         escSeq = 3
@@ -1140,7 +1140,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // シーケンス三文字目
                 case 3:
                     // 複数桁の数値のとき
-                    if dataString!.isNumeric(dataString!) {
+                    if dataString!.isNumeric() {
                         // 変位に追加する
                         escDisplace[0] = escDisplace[0] * 10 + Int(dataString!)!
                         print("nowDisplace : \(escDisplace)")
@@ -1269,7 +1269,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // シーケンス四文字目
                 case 4:
                     // 正しいシーケンスのとき
-                    if dataString!.isNumeric(dataString!) {
+                    if dataString!.isNumeric() {
                         // 変位を記憶する
                         escDisplace[1] = Int(dataString!)!
                         escSeq = 5
@@ -1283,7 +1283,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // シーケンス五文字目
                 case 5:
                     // 複数桁の数値のとき
-                    if dataString!.isNumeric(dataString!) {
+                    if dataString!.isNumeric() {
                         // 変位に追加する
                         escDisplace[1] = escDisplace[1] * 10 + Int(dataString!)!
                         print("nowDisplace : \(escDisplace)")

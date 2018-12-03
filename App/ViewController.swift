@@ -8,11 +8,10 @@
 import UIKit
 import CoreBluetooth
 
-
 // String型の拡張メソッド
 extension String {
     // String型を一文字ずつの配列に分解する関数
-    // text : 対象文字列
+    // 返り値 : 分割された文字列配列
     func partition() -> [String] {
         print("--- partition ---")
         let count = self.count
@@ -25,15 +24,15 @@ extension String {
         print("partition : \(splitText)")
         return splitText
     }
-    // 英数字の判定をする関数(ASCIIコードならtrueを返す)
-    // text : 対象文字
+    // ASCII文字の判定をする関数(ASCIIコードならtrueを返す)
+    // 返り値 : ASCII文字 -> true, それ以外 -> false
     func isAlphanumeric(_ text: String) -> Bool {
         print("--- isAlphanumeric ---")
         print("return : \(text >= "\u{00}" && text <= "\u{7f}")")
         return text >= "\u{00}" && text <= "\u{7f}"
     }
     // 数字の判定をする関数
-    // 対象文字
+    // 返り値 : 数字 -> true, それ以外 -> false
     func isNumeric() -> Bool {
         print("--- isNumeric ---")
         let partText = self.partition()
@@ -50,6 +49,7 @@ extension String {
     // font : 使用フォント
     // 返り値 : 文字列の高さ(CGFloat型)
     func getStringHeight(_ font: UIFont) -> CGFloat {
+        print("--- getStringHeight ---")
         let attribute = [NSAttributedStringKey.font: font]
         let size = self.size(withAttributes: attribute)
         print("return : \(size.height)")
@@ -59,6 +59,7 @@ extension String {
     // font : 使用フォント
     // 返り値 : 文字列の横幅(CGFloat型)
     func getStringWidth(_ font: UIFont) -> CGFloat {
+        print("--- getStringWidth ---")
         let attribute = [NSAttributedStringKey.font: font]
         let size = self.size(withAttributes: attribute)
         print("return : \(size.width)")
@@ -73,7 +74,7 @@ struct textAttr {
     var char: String
     // 色を保存する変数
     var color: UIColor
-    // 折り返しの有無を表す変数
+    // 前に続く文字の有無を表す変数
     var previous: Bool
     
     // 初期化関数
@@ -158,9 +159,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // メニューを隠す
         hideMenu(duration: 0.0)
         
-        // textviewにボタンを追加する
-        textKeyInit()
-        
         // textviewに枠線をつける
         textview.layer.borderColor = UIColor.lightGray.cgColor
         textview.layer.borderWidth = 1
@@ -193,7 +191,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // Notificationを設定する
         configureObserver()
-        
     }
     
     // viewが消える前のイベント
@@ -365,7 +362,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if viewBase > -1 && allTextAttr.count - viewBase > viewSize[0] {
             view(scroll: true)
         }
-            // スクロールしていないとき
+        // スクロールしていないとき
         else {
             // 表示する
             view()
@@ -565,7 +562,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         // ペリフェラルにエスケープシーケンスを書き込む
-        writePeripheral("\u{1b}[1A")
+        writePeripheral("\u{1b}[A")
     }
     
     // 追加ボタン↓が押されたとき
@@ -576,7 +573,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         // ペリフェラルにエスケープシーケンスを書き込む
-        writePeripheral("\u{1b}[1B")
+        writePeripheral("\u{1b}[B")
     }
     
     // 追加ボタン←が押されたとき
@@ -587,7 +584,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         // ペリフェラルにエスケープシーケンスを書き込む
-        writePeripheral("\u{1b}[1D")
+        writePeripheral("\u{1b}[D")
     }
     
     // 追加ボタン→が押されたとき
@@ -598,7 +595,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         // ペリフェラルにエスケープシーケンスを書き込む
-        writePeripheral("\u{1b}[1C")
+        writePeripheral("\u{1b}[C")
     }
     
     /* エスケープシーケンスメソッド */
@@ -1760,7 +1757,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("cursor : \(cursor)")
         
         // カーソルが文末を示しているとき
-        if cursor[1] == allTextAttr[cursor[0] - 1].count && allTextAttr[cursor[0] - 1][cursor[1] - 1].char == "_" {
+        if cursor[1] == allTextAttr[cursor[0] - 1].count && getCurrChar() == "_" {
             print("return : true")
             return true
         }
@@ -1903,11 +1900,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     // 最後尾に追加する
                     newText[newText.count - 1].append(allTextAttr[row][column])
                 }
-                if cursor == [row + 1, column + 1] {
-                    tempCursor = [newText.count, newText[newText.count - 1].count]
-                    print("cursor change")
-                    print("cursor : \(tempCursor)")
+                // カーソルを移動する
+                if column == cursor[1] - 1 {
+                    tempCursor[1] = newText[newText.count - 1].count
+                    print("cursor[1] change")
+                    print("cursor[1] : \(tempCursor[1])")
                 }
+            }
+            // カーソルを移動する
+            if row == cursor[0] - 1 {
+                tempCursor[0] = newText.count
+                print("cursor[0] change")
+                print("cursor[0] : \(tempCursor[0])")
             }
         }
         // 新しい配列をallTextAttrにする
@@ -1926,14 +1930,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- textLineUnit ---")
         print("preChar")
         viewChar(allTextAttr)
-        print("cursor : \(cursor)")
         var newBase = 0
         // 行単位に構成する
         var newText = [[textAttr]]()
         var tempCursor = cursor
         newText.append(allTextAttr[0])
         for row in 1..<allTextAttr.count {
-            print("row : \(row)")
             // 一行内のとき
             if allTextAttr[row][0].previous {
                 // 最後行に付け加える
@@ -2067,6 +2069,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func viewChar(_ text: [[textAttr]]) {
         print("--- viewChar ---")
         print("cursor : \(cursor)")
+        print("base : \(base)")
         print("viewSize : \(viewSize)")
         let allTextAttr = text
         var text = [String]()
@@ -2074,19 +2077,23 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         for row in 0..<allTextAttr.count {
             text.append("")
             for column in 0..<allTextAttr[row].count {
+                /*
                 if allTextAttr[row][column].char == "" {
                     print("allTextAttr[\(row)][\(column)].char is empty")
                 }
+                */
                 text[text.count - 1].append(allTextAttr[row][column].char)
                 if !allTextAttr[row][column].previous {
                     prev.append([row + 1, column + 1])
                 }
             }
         }
+        /*
         print("text")
         print(text)
         print("line top")
         print(prev)
+        */
     }
 }
 

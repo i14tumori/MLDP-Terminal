@@ -234,7 +234,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             viewBase = base
         }
         // 画面を上にスワイプしたとき
-        if prevScroll.y > location.y {
+        if prevScroll.y - location.y > 2 {
             print("up Swipe")
             print("viewBase : \(viewBase)")
             // 下にスクロールできるとき
@@ -245,7 +245,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
         }
         // 画面を下にスワイプしたとき
-        else if location.y > prevScroll.y {
+        else if location.y - prevScroll.y > 2 {
             print("down Swipe")
             print("viewBase : \(viewBase)")
             // 上にスクロールできるとき
@@ -996,12 +996,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         let data = characteristic.value
         var dataString = String(data: data!, encoding: .utf8)
         
-        print("dataString:\(String(describing: dataString))")
-        // \0(nil)のとき
-        if dataString == nil {
-            return
-        }
-        
         // スクロール基底を初期化する
         viewBase = -1
         // 書き込み位置を表示する
@@ -1014,11 +1008,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             dataString = String(tempSaveData.prefix(1))
             tempSaveData = String(tempSaveData.suffix(tempSaveData.count - 1))
             
-            // ASCIIコード外のとき
-            if !dataString!.isAlphanumeric(dataString!) {
+            print("dataString : \(String(describing: dataString))")
+            
+            // ASCIIコード外または\0(nil)のとき
+            if !dataString!.isAlphanumeric(dataString!) || dataString == nil {
                 return
             }
-                // エスケープシーケンス のとき
+            // エスケープシーケンス のとき
             else if escSeq > 0 {
                 switch escSeq {
                 // シーケンス一文字目
@@ -1344,7 +1340,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("cursor : \(cursor)")
         
         // 改行なら次の行の準備とカーソル文字の削除をして返る
-        if string == "\r" || string == "\n" {
+        if string == "\r" || string == "\n" || string == "\r\n" {
             // 行の文字数がviewSizeと等しいとき
             if getCurrPrev() && getCurrChar() == "_" && allTextAttr[cursor[0] - 1].count == 1 {
                 // 違う行にする
@@ -1745,8 +1741,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // カーソルが最後尾を示しているとき
         if curIsSentenceEnd() && cursor[0] == allTextAttr.count {
+            print("return : true")
             return true
         }
+        print("return : false")
         return false
     }
     
@@ -2088,12 +2086,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 }
             }
         }
-        /*
+         /*
         print("text")
         print(text)
         print("line top")
         print(prev)
-        */
+         */
     }
 }
 

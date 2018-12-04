@@ -851,6 +851,29 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    // スクロール範囲を設定する関数
+    // n : スクロール範囲先頭行
+    // m : スクロール範囲後尾行
+    func escSetScrollRange(n: Int, m: Int) {
+        print("--- escSetScrollRange ---")
+        print("n : \(n)")
+        print("m : \(m)")
+        var start = n
+        var end = m
+        // 負の値だったとき
+        if start < 0 || end < 0 {
+            print("Invalid Number")
+            return
+        }
+        // スクロール範囲が画面サイズを超えるとき
+        if start == 0 {
+            start = 1
+        }
+        if end > viewSize[0] {
+            end = viewSize[0]
+        }
+    }
+    
     /* Central関連メソッド */
     
     // centralManagerの状態が変化すると呼ばれるイベント
@@ -1117,6 +1140,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         }
                         escRoot(n: cursor[0], m: m)
                         escSeq = 0
+                    // 現在位置と関係なく1行1桁の位置に移動する
+                    case "H":
+                        escRoot(n: 1, m: 1)
+                        escSeq = 0
                     // 画面を消去する
                     case "J":
                         escViewDelete(n: 0)
@@ -1306,6 +1333,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             m = 1
                         }
                         escRoot(n: n + base, m: m)
+                        escSeq = 0
+                    }
+                    // スクロール範囲を設定する
+                    else if dataString! == "r" {
+                        escSetScrollRange(n: escDisplace[0], m: escDisplace[1])
                         escSeq = 0
                     }
                     // シーケンスではなかったとき

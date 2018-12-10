@@ -851,29 +851,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    // スクロール範囲を設定する関数
-    // n : スクロール範囲先頭行
-    // m : スクロール範囲後尾行
-    func escSetScrollRange(n: Int, m: Int) {
-        print("--- escSetScrollRange ---")
-        print("n : \(n)")
-        print("m : \(m)")
-        var start = n
-        var end = m
-        // 負の値だったとき
-        if start < 0 || end < 0 {
-            print("Invalid Number")
-            return
-        }
-        // スクロール範囲が画面サイズを超えるとき
-        if start == 0 {
-            start = 1
-        }
-        if end > viewSize[0] {
-            end = viewSize[0]
-        }
-    }
-    
     /* Central関連メソッド */
     
     // centralManagerの状態が変化すると呼ばれるイベント
@@ -1033,8 +1010,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             print("dataString : \(String(describing: dataString))")
             
-            // ASCIIコード外または\0(nil)のとき
-            if !dataString!.isAlphanumeric(dataString!) || dataString == nil {
+            // ASCIIコード外のとき
+            if !dataString!.isAlphanumeric(dataString!) {
                 return
             }
             // エスケープシーケンス のとき
@@ -1090,19 +1067,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         escSeq = 0
                     // 右に1移動する
                     case "C":
-                        // 行単位に構成する
-                        textLineUnit()
                         escRight(n: 1)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
                     // 左に1移動する
                     case "D":
-                        // 行単位に構成する
-                        textLineUnit()
                         escLeft(n: 1)
-                        // viewSize[1]の大きさに構成する
-                        textResize()
                         escSeq = 0
                     // 1行下の先頭に移動する
                     case "E":
@@ -1142,7 +1111,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         escSeq = 0
                     // 現在位置と関係なく1行1桁の位置に移動する
                     case "H":
-                        escRoot(n: 1, m: 1)
+                        escRoot(n: base + 1, m: 1)
                         escSeq = 0
                     // 画面を消去する
                     case "J":
@@ -1198,6 +1167,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     // 右にn移動する
                     case "C":
                         var n = escDisplace[0]
+                        // 移動上限を定める
                         if n > viewSize[1] - cursor[1] {
                             n = viewSize[1] - cursor[1]
                         }
@@ -1335,11 +1305,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         escRoot(n: n + base, m: m)
                         escSeq = 0
                     }
-                    // スクロール範囲を設定する
-                    else if dataString! == "r" {
-                        escSetScrollRange(n: escDisplace[0], m: escDisplace[1])
-                        escSeq = 0
-                    }
                     // シーケンスではなかったとき
                     else {
                         print("NO ESC_SEQ")
@@ -1419,8 +1384,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         // BS(後退)ならテキストを削除する
-        if string == "\u{08}" {
+        else if string == "\u{08}" {
             deleteTextView()
+            return
+        }
+        // 上記以外の制御コードのとき
+        else if string >= "\u{00}" && string <= "\u{1f}" {
+            // 何もせずに返る
             return
         }
         
@@ -2118,12 +2088,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 }
             }
         }
-         /*
+        // /*
         print("text")
         print(text)
+        // /*
         print("line top")
         print(prev)
-         */
+        // */
     }
 }
 

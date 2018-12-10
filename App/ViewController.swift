@@ -101,6 +101,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var base = 0
     // カーソル位置記憶変数
     var cursor = [1, 1]
+    // 行判定フラグ
+    var flap = false
     // テキスト保存変数
     var allTextAttr = [[textAttr]]()
     // 色の一時記憶変数
@@ -374,6 +376,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 画面が回転したときに呼ばれる関数
     @objc func onOrientationChange(notification: Notification?) {
         print("--- onOrientationChange ---")
+        // 画面サイズを一時保存する
+        let tempSize = viewSize
         // 画面サイズを設定する
         setSize()
         // indicatorを表示しているとき
@@ -385,6 +389,35 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 showToast(message: tempToastMessage)
             }
         }
+        // 画面縦のズレ幅
+        let gap = abs(viewSize[0] - tempSize[0])
+        // 画面が縦に伸びたとき
+        if viewSize[0] > tempSize[0] {
+            // ズレ幅だけ基底位置を上げる
+            base -= gap
+            // 基底位置の上限を定める
+            if base < 0 {
+                base = 0
+            }
+        }
+        // 画面が縦に縮んだとき
+        else if viewSize[0] < tempSize[0] {
+            // ズレ幅だけ基底位置を下げる
+            base += gap + 1
+            // 基底位置を下げすぎたとき
+            if base > allTextAttr.count - viewSize[0] {
+                // 基底位置を上げる
+                base = allTextAttr.count - viewSize[0]
+                // 基底位置の上限を定める
+                if base < 0 {
+                    base = 0
+                }
+            }
+        }
+        // 書き込み位置を表示する
+        view()
+        // スクロール基底を初期化する
+        viewBase = -1
     }
     
     // メニューが押されたとき
@@ -1329,6 +1362,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    /*
     // textview内のカーソル位置に文字を書き込む関数
     // string : 書き込む文字
     func writeTextView(_ string: String) {
@@ -1466,6 +1500,77 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             cursor[1] += 1
         }
     }
+    */
+    
+    // textview内のカーソル位置に文字を書き込む関数
+    // string : 書き込む文字
+    func writeTextView(_ string: String) {
+        print("--- writeTextView ---")
+        print("string : \(string)")
+        print("cursor : \(cursor)")
+        
+        // 改行文字のとき
+        if string == "\r" || string == "\n" || string == "\r\n" {
+            // 行の文字数がviewSizeと等しいとき
+            if getCurrPrev() && getCurrChar() == "_" && allTextAttr[cursor[0] - 1].count == 1 {
+                // 違う行にする
+                allTextAttr[cursor[0] - 1][0].previous = false
+                return
+            }
+            // カーソルが最後行のとき
+            if cursor[0] == allTextAttr.count {
+                // 次のテキスト記憶を準備
+                allTextAttr.append([textAttr(char: "_", color: currColor)])
+            }
+            // カーソルが文末のとき
+            if curIsSentenceEnd() {
+                // 文字がないとき
+                if allTextAttr[cursor[0] - 1].count == 1 && getCurrChar() == "_" {
+                    allTextAttr[cursor[0] - 1][cursor[1] - 1].char = ""
+                }
+                // 文字があるとき
+                else {
+                    // カーソル文字を削除する
+                    allTextAttr[cursor[0] - 1].removeLast()
+                }
+            }
+            // カーソルをずらす
+            cursor[0] += 1
+            cursor[1] = 1
+            // 違う行にする
+            allTextAttr[cursor[0] - 1][cursor[1] - 1].previous = false
+            // カーソルが基底から数えて最大行数を超えたとき
+            if cursor[0] > base + viewSize[0] {
+                base += 1
+            }
+            return
+        }
+        // 改行以外の制御コードのとき
+        else if string >= "\u{00}" && string <= "\u{1f}" {
+            return
+        }
+        // 行内が文字で埋まっているとき
+        if allTextAttr[cursor[0] - 1].count == viewSize[1] {
+            flap = true
+        }
+        // カーソル位置に文字と色を書き込む
+        allTextAttr[cursor[0] - 1][cursor[1] - 1].char = string
+        allTextAttr[cursor[0] - 1][cursor[1] - 1].color = currColor
+        // 折り返していたとき
+        if flap {
+            // フラグを下ろす
+            flap = false
+            // 同じ行にする
+            allTextAttr[cursor[0] - 1][cursor[1] - 1].previous = true
+        }
+        // カーソルが文末のとき
+        if cursor[1] == allTextAttr[cursor[0] - 1].count && !flap {
+            allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor))
+        }
+        // カーソルを移動する
+        cursor[1] += 1
+    }
+    
     
     // ペリフェラルに文字を書き込む関数
     // txStr : 書き込む文字
@@ -1993,6 +2098,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         base = 0
         // スクロール基底を初期化する
         viewBase = -1
+        // 行判定を初期化する
+        flap = false
         // カーソル位置を初期化する
         cursor = [1, 1]
         // カーソル表示
@@ -2094,6 +2201,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // /*
         print("line top")
         print(prev)
+        // */
+        print("textviewText")
+        print(textview.text)
         // */
     }
 }

@@ -561,6 +561,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 追加ボタンESCが押されたとき
     @objc func escTapped() {
         print("--- esc ---")
+        buttonColorChange(button: escButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
             return
@@ -590,6 +591,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 追加ボタン↑が押されたとき
     @objc func upTapped() {
         print("--- up ---")
+        buttonColorChange(button: upButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
             return
@@ -601,6 +603,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 追加ボタン↓が押されたとき
     @objc func downTapped() {
         print("--- down ---")
+        buttonColorChange(button: downButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
             return
@@ -612,6 +615,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 追加ボタン←が押されたとき
     @objc func leftTapped() {
         print("--- left ---")
+        buttonColorChange(button: leftButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
             return
@@ -623,12 +627,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 追加ボタン→が押されたとき
     @objc func rightTapped() {
         print("--- right ---")
+        buttonColorChange(button: rightButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
             return
         }
         // ペリフェラルにエスケープシーケンスを書き込む
         writePeripheral("\u{1b}[C")
+    }
+    
+    func buttonColorChange(button: UIButton) {
+        // ボタンの背景を変更する
+        button.backgroundColor = UIColor.white
+        UIView.animate(withDuration: TimeInterval(0.4)) {
+            button.backgroundColor = UIColor.lightGray
+        }
     }
     
     /* エスケープシーケンスメソッド */
@@ -1549,26 +1562,36 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         else if string >= "\u{00}" && string <= "\u{1f}" {
             return
         }
-        // 行内が文字で埋まっているとき
-        if allTextAttr[cursor[0] - 1].count == viewSize[1] {
-            flap = true
-        }
         // カーソル位置に文字と色を書き込む
         allTextAttr[cursor[0] - 1][cursor[1] - 1].char = string
         allTextAttr[cursor[0] - 1][cursor[1] - 1].color = currColor
-        // 折り返していたとき
+        // 折り返しがあったとき
         if flap {
-            // フラグを下ろす
             flap = false
-            // 同じ行にする
             allTextAttr[cursor[0] - 1][cursor[1] - 1].previous = true
         }
-        // カーソルが文末のとき
-        if cursor[1] == allTextAttr[cursor[0] - 1].count && !flap {
-            allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor))
+        // 基底位置がずれるとき
+        if cursor[0] == base + viewSize[0] && cursor[1] == viewSize[1] {
+            base += 1
         }
-        // カーソルを移動する
-        cursor[1] += 1
+        // 折り返すとき
+        if cursor[1] == viewSize[1] {
+            // カーソルが最後行のとき
+            if cursor[0] == allTextAttr.count {
+                allTextAttr.append([textAttr(char: "_", color: currColor)])
+            }
+            cursor[0] += 1
+            cursor[1] = 1
+            flap = true
+        }
+        // 折り返さないとき
+        else {
+            // カーソルが最後桁のとき
+            if cursor[1] == allTextAttr[cursor[0] - 1].count {
+                allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor))
+            }
+            cursor[1] += 1
+        }
     }
     
     

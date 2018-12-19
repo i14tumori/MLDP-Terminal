@@ -636,6 +636,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         writePeripheral("\u{1b}[C")
     }
     
+    // キーボード追加ボタンの背景色を変更する関数
+    // button : 変更対象ボタン
     func buttonColorChange(button: UIButton) {
         // ボタンの背景を変更する
         button.backgroundColor = UIColor.white
@@ -763,6 +765,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // カーソルをずらす
         cursor[0] = cursor[0] + n
         cursor[1] = 1
+        // カーソル行が空行のとき
+        if allTextAttr[cursor[0] - 1][0].char == "" && allTextAttr[cursor[0] - 1].count == 1 {
+            // カーソル文字を追加する
+            allTextAttr[cursor[0] - 1] = [textAttr(char: "_", color: currColor, previous: false)]
+        }
         refresh()
     }
     
@@ -1558,8 +1565,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             return
         }
-        // 改行以外の制御コードのとき
+        // BS(後退)ならテキストを削除する
+        else if string == "\u{08}" {
+            deleteTextView()
+            return
+        }
+        // 上記以外の制御コードのとき
         else if string >= "\u{00}" && string <= "\u{1f}" {
+            // 何もせずに返る
             return
         }
         // カーソル位置に文字と色を書き込む
@@ -1606,7 +1619,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 var buffer = [UInt8](txData)[0] & 0b00011111
                 txData = NSData(bytes: &buffer, length: 1) as Data
             }
+            // 改行文字のとき
+            if txData == "\n".data(using: .utf8) {
+                // 行の文字数がviewSizeと等しいとき
+                if getCurrPrev() && allTextAttr[cursor[0] - 1].count == 1 {
+                    // 違う行にする
+                    allTextAttr[cursor[0] - 1][0].previous = false
+                }
+            }
             print("txData : \(String(describing: String(data: txData, encoding: .utf8)))")
+            // ペリフェラルに書き込む
             appDelegate.peripheral.writeValue(txData, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
         }
         else {

@@ -2223,6 +2223,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("cursor : \(cursor)")
         print("base : \(base)")
         print("viewSize : \(viewSize)")
+        var sentence = [String]()
+        for row in 0..<allTextAttr.count {
+            for column in 0..<allTextAttr[row].count {
+                if allTextAttr[row][column].previous {
+                    sentence[sentence.count - 1].append(allTextAttr[row][column].char)
+                }
+                else {
+                    sentence.append(allTextAttr[row][column].char)
+                }
+            }
+        }
+        print("sentence")
+        print(sentence)
+        /*
         let allTextAttr = text
         var text = [String]()
         var prev = [[Int]]()
@@ -2240,7 +2254,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 }
             }
         }
-        // /*
+        */
+         /*
         print("text")
         print(text)
         // /*

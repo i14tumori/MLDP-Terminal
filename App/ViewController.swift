@@ -338,6 +338,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 base = 0
             }
         }
+        // カーソルが表示範囲から外れたとき
+        if cursor[0] < base + 1 {
+            base = cursor[0] - 1
+        }
+        else if cursor[0] > (base + 1) + viewSize[0] {
+            base = cursor[0] - viewSize[0]
+        }
         // 書き込み位置を表示する
         view()
         // スクロール基底を初期化する
@@ -412,6 +419,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if base < 0 {
                     base = 0
                 }
+            }
+            // カーソルが表示範囲から外れたとき
+            if cursor[0] < base + 1 {
+                base = cursor[0] - 1
+            }
+            else if cursor[0] > (base + 1) + viewSize[0] {
+                base = cursor[0] - viewSize[0]
             }
         }
         // 書き込み位置を表示する

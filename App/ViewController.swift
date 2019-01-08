@@ -74,7 +74,7 @@ struct textAttr {
     var char: String
     // 色を保存する変数
     var color: UIColor
-    // 前に続く文字の有無を表す変数
+    // 前に続く文字の有無(同一行内か)を表す変数
     var previous: Bool
     
     // 初期化関数
@@ -139,6 +139,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // Ctrlボタン押下フラグ
     var ctrlKey = false
     
+    // オブジェクト
     @IBOutlet weak var textview: UITextView!
     @IBOutlet weak var menu: UIButton!
     @IBOutlet weak var menuBackView: UIView!
@@ -406,6 +407,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // 基底位置の上限を定める
             if base < 0 {
                 base = 0
+            }
+            // カーソルが表示範囲から外れたとき
+            if cursor[0] < base + 1 {
+                base = cursor[0] - 1
+            }
+            else if cursor[0] > (base + 1) + viewSize[0] {
+                base = cursor[0] - viewSize[0]
             }
         }
         // 画面が縦に縮んだとき

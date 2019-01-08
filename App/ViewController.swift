@@ -142,6 +142,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var textview: UITextView!
     @IBOutlet weak var menu: UIButton!
     @IBOutlet weak var menuBackView: UIView!
+    @IBOutlet weak var connectDevice: UILabel!
     
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
@@ -464,11 +465,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- hideMenu ---")
         // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
+            /*
             self.menuBackView.center.x = 0
+            self.connectDevice.center.x = self.view.center.x - self.menu.bounds.width
+            */
+            self.menuBackView.frame.origin.x = -self.menuBackView.frame.size.width
+            self.connectDevice.center.x = self.view.center.x - self.menu.bounds.size.width
         }
         // メニューを隠す
         UIView.animate(withDuration: TimeInterval(second)) {
             self.menuBackView.alpha = 0.0
+            self.connectDevice.alpha = 1.0
         }
     }
     
@@ -478,11 +485,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- showMenu ---")
         // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
+            /*
             self.menuBackView.center.x = self.view.center.x - self.menu.bounds.width
+            self.connectDevice.center.x = self.view.bounds.width
+            */
+            self.menuBackView.center.x = self.view.center.x - self.menu.bounds.size.width
+            self.connectDevice.frame.origin.x = self.view.bounds.size.width
         }
         // メニューを表示する
         UIView.animate(withDuration: TimeInterval(second)) {
             self.menuBackView.alpha = 1.0
+            self.connectDevice.alpha = 0.0
         }
     }
     
@@ -970,6 +983,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("disconnect complete")
         // トーストを出力する
         showToast(message: "切断完了")
+        // ラベルを初期化する
+        connectDevice.text = "Connection : "
+        // メニューを隠す
+        hideMenu(duration: 0.7)
         // データを初期化する
         appDelegate.isScanning = false
         appDelegate.centralManager = CBCentralManager()
@@ -1035,7 +1052,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // ペリフェラルにデータを書き込む
             peripheral.writeValue(data!, for: appDelegate.outputCharacteristic, type: CBCharacteristicWriteType.withResponse)
             
+            // トーストを出力する
             showToast(message: "デバイス接続")
+            // ラベルにデバイス名を貼り付ける
+            connectDevice.text = "Connection : " + peripheral.name!
+            // メニューを隠す
+            hideMenu(duration: 0.7)
         }
     }
     
@@ -1439,9 +1461,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             return
         }
-        // BS(後退)ならテキストを削除する
+        // BS(後退)ならカーソルを一つ左にずらす
         else if string == "\u{08}" {
-            deleteTextView()
+            escLeft(n: 1)
             return
         }
         // 上記以外の制御コードのとき
@@ -1510,7 +1532,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    // カーソル位置の一つ前の文字を削除する関数
+    // カーソル位置の一つ前の文字を削除する関数 (未使用)
     func deleteTextView() {
         print("--- deleteTextView ---")
         var slide = false
@@ -2007,6 +2029,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         toast = false
         // トーストメッセージを初期化する
         tempToastMessage = ""
+        // デバイスラベルを初期化する
+        connectDevice.text = "Connection : "
         
         // Ctrl押下フラグを初期化する
         ctrlKey = false

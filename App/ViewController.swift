@@ -465,13 +465,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- hideMenu ---")
         // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
-            /*
-            self.menuBackView.center.x = 0
-            self.connectDevice.center.x = self.view.center.x - self.menu.bounds.width
-            */
             self.menuBackView.frame.origin.x = -self.menuBackView.frame.size.width
-            self.connectDevice.center.x = self.view.center.x - self.menu.bounds.size.width
         }
+        // デバイスラベルを移動させる
+        UIView.animate(withDuration: TimeInterval(second), delay: TimeInterval(second / 2), options: [], animations: {
+            self.connectDevice.center.x = self.view.center.x - self.menu.bounds.size.width
+        })
         // メニューを隠す
         UIView.animate(withDuration: TimeInterval(second)) {
             self.menuBackView.alpha = 0.0
@@ -483,15 +482,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // second : 表示アニメーションの秒数
     func showMenu(duration second: Float) {
         print("--- showMenu ---")
-        // メニューを移動させる
+        // デバイスラベルを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
-            /*
-            self.menuBackView.center.x = self.view.center.x - self.menu.bounds.width
-            self.connectDevice.center.x = self.view.bounds.width
-            */
-            self.menuBackView.center.x = self.view.center.x - self.menu.bounds.size.width
-            self.connectDevice.frame.origin.x = self.view.bounds.size.width
+            self.connectDevice.frame.origin.x = -self.connectDevice.frame.size.width
         }
+        // メニューを移動させる
+        UIView.animate(withDuration: TimeInterval(second), delay: TimeInterval(second / 2), options: [], animations: {
+            self.menuBackView.center.x = self.view.center.x - self.menu.bounds.size.width
+        })
         // メニューを表示する
         UIView.animate(withDuration: TimeInterval(second)) {
             self.menuBackView.alpha = 1.0

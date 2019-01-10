@@ -1093,8 +1093,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // スクロール基底を初期化する
         viewBase = -1
-        // 書き込み位置を表示する
-        view()
         
         // 複数文字届いたときは一字ずつ処理する
         var tempSaveData = dataString!

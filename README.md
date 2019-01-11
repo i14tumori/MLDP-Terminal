@@ -1,5 +1,5 @@
 # MLDP-Terminal
-Microchip社のRN4020 Bluetooth Low Energy Moduleを通じてiPhone上で動作するターミナルエミュレータ．　　
+Microchip社のRN4020 Bluetooth Low Energy Moduleを通じてiPhone上で動作するターミナルエミュレータ．  
 通信にはMLDP(Microchip Low Energy Data Profile)を使用する．　　
 
 ##  RN4020 初期化

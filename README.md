@@ -69,3 +69,22 @@ cancel  … キャンセルボタン．メイン画面に遷移する．
 <pre> ttyU0   "/usr/libexec/getty 3wire.9600" tec7b-term   on secure</pre>
 
 ※ FreeBSD 11.2-RELEASE での動作確認時の設定
+
+## 開発環境
+macOS Mojave(10.14.1)  
+iOS 12.1.2
+Xcode 10.1  
+CoolTerm 1.5.0  
+Swift 4.2.1
+
+
+
+
+
+
+
+
+
+
+
+

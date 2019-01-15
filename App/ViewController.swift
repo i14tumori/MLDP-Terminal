@@ -849,7 +849,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // cursor[0] - n上の先頭に移動する
             escUpTop(n: cursor[0] - n)
         }
-            // カーソルを下に移動させるとき
+        // カーソルを下に移動させるとき
         else {
             // n - cursor[0]下の先頭に移動する
             escDownTop(n: n - cursor[0])
@@ -1423,7 +1423,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("cursor : \(cursor)")
         
         // 改行文字のとき
-        if string == "\r" || string == "\n" || string == "\r\n" {
+        if string == "\r\n" {
             // 行の文字数がviewSizeと等しいとき
             if getCurrPrev() && getCurrChar() == "_" && allTextAttr[cursor[0] - 1].count == 1 {
                 // 違う行にする
@@ -1456,6 +1456,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if cursor[0] > base + viewSize[0] {
                 base += 1
             }
+            return
+        }
+        else if string == "\r" {
+            escRoot(n: cursor[0], m: 1)
+            return
+        }
+        else if string == "\n" {
+            escDown(n: 1)
             return
         }
         // BS(後退)ならカーソルを一つ左にずらす

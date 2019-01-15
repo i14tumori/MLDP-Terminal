@@ -1193,14 +1193,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         escSeq = 0
                     // 最左に移動する
                     case "G":
-                        var m = 1
-                        print("m : \(m)")
-                        print("viewSize[1] : \(viewSize[1])")
-                        // 移動上限を定める
-                        if m > viewSize[1] {
-                            m = viewSize[1]
-                        }
-                        escRoot(n: cursor[0], m: m)
+                        escRoot(n: cursor[0], m: 1)
                         escSeq = 0
                     // 現在位置と関係なく1行1桁の位置に移動する
                     case "H":

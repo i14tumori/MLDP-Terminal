@@ -344,7 +344,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if cursor[0] < base + 1 {
             base = cursor[0] - 1
         }
-        else if cursor[0] > (base + 1) + viewSize[0] {
+        else if cursor[0] > base + viewSize[0] {
             base = cursor[0] - viewSize[0]
         }
         // 書き込み位置を表示する
@@ -412,7 +412,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if cursor[0] < base + 1 {
                 base = cursor[0] - 1
             }
-            else if cursor[0] > (base + 1) + viewSize[0] {
+            else if cursor[0] > base + viewSize[0] {
                 base = cursor[0] - viewSize[0]
             }
         }
@@ -433,7 +433,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if cursor[0] < base + 1 {
                 base = cursor[0] - 1
             }
-            else if cursor[0] > (base + 1) + viewSize[0] {
+            else if cursor[0] > base + viewSize[0] {
                 base = cursor[0] - viewSize[0]
             }
         }
@@ -1470,6 +1470,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // LF(改行)ならカーソルを1行下に移動する
         else if string == "\n" {
             escDown(n: 1)
+            if cursor[0] > base + viewSize[0] {
+                base += 1
+            }
             return
         }
         // BS(後退)ならカーソルを一つ左にずらす

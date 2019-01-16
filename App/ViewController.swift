@@ -1094,8 +1094,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // スクロール基底を初期化する
         viewBase = -1
         
-        // 複数文字届いたときは一字ずつ処理する
+        // データが読み取れないとき
+        if dataString == nil {
+            dataString = "?"
+        }
         var tempSaveData = dataString!
+        // 複数文字届いたときは一字ずつ処理する
         for _ in 0..<tempSaveData.count {
             // 最初の一文字だけ取り出す
             dataString = String(tempSaveData.prefix(1))
@@ -1422,7 +1426,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("string : \(string)")
         print("cursor : \(cursor)")
         
-        // 改行文字のとき
+        // CR+LF(改行)のとき
         if string == "\r\n" {
             // 行の文字数がviewSizeと等しいとき
             if getCurrPrev() && getCurrChar() == "_" && allTextAttr[cursor[0] - 1].count == 1 {
@@ -1458,10 +1462,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             return
         }
+        // CR(復帰)ならカーソルを行頭に移動する
         else if string == "\r" {
             escRoot(n: cursor[0], m: 1)
             return
         }
+        // LF(改行)ならカーソルを1行下に移動する
         else if string == "\n" {
             escDown(n: 1)
             return

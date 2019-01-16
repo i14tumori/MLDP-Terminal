@@ -1475,6 +1475,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             return
         }
+        // HT(水平タブ)ならカーソルを八文字ごとに飛ばす
+        else if string == "\t" {
+            // 行単位で構成する
+            textLineUnit()
+            // 必要な空白数を計算し追加する
+            let count = ((cursor[1] / 8 + 1) * 8) - cursor[1]
+            for _ in 0..<count {
+                writeTextView(" ")
+            }
+            // viewSizeで構成する
+            textResize()
+            return
+        }
         // BS(後退)ならカーソルを一つ左にずらす
         else if string == "\u{08}" {
             escLeft(n: 1)
@@ -2139,12 +2152,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         for row in 0..<allTextAttr.count {
             for column in 0..<allTextAttr[row].count {
                 if allTextAttr[row][column].previous {
+                    print("p", terminator: "")
                     sentence[sentence.count - 1].append(allTextAttr[row][column].char)
                 }
                 else {
+                    print("0", terminator: "")
                     sentence.append(allTextAttr[row][column].char)
                 }
             }
+            print()
         }
         print("sentence")
         print(sentence)

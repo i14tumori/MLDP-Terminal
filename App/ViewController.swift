@@ -130,6 +130,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 追加するボタン一覧
     let escButton = UIButton(frame: CGRect())
     let ctrlButton = UIButton(frame: CGRect())
+    let tabButton = UIButton(frame: CGRect())
     let upButton = UIButton(frame: CGRect())
     let downButton = UIButton(frame: CGRect())
     let leftButton = UIButton(frame: CGRect())
@@ -535,6 +536,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("--- deviceDelete button tapped ---")
         // 記憶デバイスを消去する
         UserDefaults.standard.removeObject(forKey: "DeviceName")
+        // トーストを出力する
+        showToast(message: "削除完了")
     }
     
     // トースト出力関数
@@ -619,6 +622,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             ctrlButton.backgroundColor = UIColor.lightGray
             ctrlButton.setTitleColor(UIColor.white, for: .normal)
         }
+    }
+    
+    // 追加ボタンtabが押されたとき
+    @objc func tabTapped() {
+        print("--- tab ---")
+        buttonColorChange(button: tabButton)
+        // ペリフェラルとつながっていないときは何もしない
+        if appDelegate.outputCharacteristic == nil {
+            return
+        }
+        // ペリフェラルにタブを書き込む
+        writePeripheral("\t")
     }
     
     // 追加ボタン↑が押されたとき
@@ -1477,15 +1492,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // HT(水平タブ)ならカーソルを八文字ごとに飛ばす
         else if string == "\t" {
-            // 行単位で構成する
-            textLineUnit()
             // 必要な空白数を計算し追加する
             let count = ((cursor[1] / 8 + 1) * 8) - cursor[1]
             for _ in 0..<count {
                 writeTextView(" ")
             }
-            // viewSizeで構成する
-            textResize()
             return
         }
         // BS(後退)ならカーソルを一つ左にずらす
@@ -2098,42 +2109,42 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // コントロールキーの設定
         ctrlButton.backgroundColor = UIColor.lightGray
         ctrlButton.setTitle("Ctrl", for: UIControlState.normal)
-        ctrlButton.addTarget(ViewController(), action: #selector(ViewController.ctrlTapped), for: UIControlEvents.touchUpInside)
+        ctrlButton.addTarget(ViewController(), action: #selector(ctrlTapped), for: UIControlEvents.touchUpInside)
+        
+        // タブキーの設定
+        tabButton.backgroundColor = UIColor.lightGray
+        tabButton.setTitle("tab", for: UIControlState.normal)
+        tabButton.addTarget(self, action: #selector(tabTapped), for: UIControlEvents.touchUpInside)
         
         // 上矢印キーの設定
         upButton.backgroundColor = UIColor.lightGray
         upButton.setTitle("↑", for: UIControlState.normal)
-        upButton.addTarget(ViewController(), action: #selector(ViewController.upTapped), for: UIControlEvents.touchUpInside)
+        upButton.addTarget(self, action: #selector(upTapped), for: UIControlEvents.touchUpInside)
         
         // 下矢印キーの設定
         downButton.backgroundColor = UIColor.lightGray
         downButton.setTitle("↓", for: UIControlState.normal)
-        downButton.addTarget(ViewController(), action: #selector(ViewController.downTapped), for: UIControlEvents.touchUpInside)
+        downButton.addTarget(self, action: #selector(downTapped), for: UIControlEvents.touchUpInside)
         
         // 左矢印キーの設定
         leftButton.backgroundColor = UIColor.lightGray
         leftButton.setTitle("←", for: UIControlState.normal)
-        leftButton.addTarget(ViewController(), action: #selector(ViewController.leftTapped), for: UIControlEvents.touchUpInside)
+        leftButton.addTarget(self, action: #selector(leftTapped), for: UIControlEvents.touchUpInside)
         
         // 右矢印キーの設定
         rightButton.backgroundColor = UIColor.lightGray
         rightButton.setTitle("→", for: UIControlState.normal)
-        rightButton.addTarget(ViewController(), action: #selector(ViewController.rightTapped), for: UIControlEvents.touchUpInside)
-        
-        // キーボードダウンキーの設定
-        keyDownButton.backgroundColor = UIColor.lightGray
-        keyDownButton.setTitle("done", for: UIControlState.normal)
-        keyDownButton.addTarget(ViewController(), action: #selector(ViewController.keyboardDown), for: UIControlEvents.touchUpInside)
+        rightButton.addTarget(self, action: #selector(rightTapped), for: UIControlEvents.touchUpInside)
         
         
         // ボタンをViewに追加する
         keyboard.addArrangedSubview(escButton)
         keyboard.addArrangedSubview(ctrlButton)
+        keyboard.addArrangedSubview(tabButton)
         keyboard.addArrangedSubview(upButton)
         keyboard.addArrangedSubview(downButton)
         keyboard.addArrangedSubview(leftButton)
         keyboard.addArrangedSubview(rightButton)
-        keyboard.addArrangedSubview(keyDownButton)
         
         // ボタンViewに背景をつける
         buttonBackView.addSubview(keyboard)

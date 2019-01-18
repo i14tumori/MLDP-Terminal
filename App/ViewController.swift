@@ -91,7 +91,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     let notification = NotificationCenter.default
     
     // プライバシーポリシーURL
-    let policyLink = "https://github.com/i14tumori/MLDP-Terminal/blob/master/README.md"
+    let policyLink = "https://tctsigemura.github.io/MLDPTerminal/privacy.html"
     
     // エスケープシーケンス判断用フラグ
     var escSeq = 0

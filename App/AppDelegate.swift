@@ -38,7 +38,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     /* その他 */
     
+    // Busy画面表示用変数
     var indicator = BusyIndicator.sharedManager
+    // 接続待ちタイマー
+    var connectTimer = Timer()
+    // 切断状況判定変数
+    var disconnectStatus = 0
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.

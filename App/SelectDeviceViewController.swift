@@ -143,6 +143,15 @@ class SelectDeviceViewController: UIViewController, CBCentralManagerDelegate, CB
         // 接続開始
         print("\(String(describing: appDelegate.peripheral.name!))へ接続開始")
         appDelegate.centralManager.connect(appDelegate.peripheral, options: nil)
+        
+        // タイマーがすでに動作しているとき
+        if appDelegate.connectTimer.isValid {
+            // 現在のタイマーを破棄する
+            appDelegate.connectTimer.invalidate()
+        }
+        // タイマーを生成する
+        appDelegate.connectTimer = Timer.scheduledTimer(timeInterval: 5, target: ViewController(), selector: #selector(ViewController().timeOut), userInfo: nil, repeats: false)
+        print("waiting for connection")
     }
     
     @IBAction func cancelButtonTapped(_ sender: UIButton) {

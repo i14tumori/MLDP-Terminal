@@ -87,8 +87,6 @@ struct textAttr {
 
 class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, UITextViewDelegate {
     
-    var timer: Timer?
-    
     // 通知変数
     let notification = NotificationCenter.default
     
@@ -524,6 +522,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             return
         }
         
+        // 意図的な切断
+        appDelegate.disconnectStatus = 1
         // 通知を切る
         appDelegate.peripheral.setNotifyValue(false, for: appDelegate.outputCharacteristic)
         // 通信を切断する
@@ -992,6 +992,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         appDelegate.centralManager.stopScan()
         print("探索終了")
         
+        // 接続待ちタイマーを破棄する
+        appDelegate.connectTimer.invalidate()
+        
         // サービス探索結果を受け取るためにデリゲートをセット
         appDelegate.peripheral.delegate = self
         
@@ -1002,8 +1005,23 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // ペリフェラルとの切断が完了すると呼ばれるイベント
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         print("disconnect complete")
-        // トーストを出力する
-        showToast(message: "切断完了")
+        print("Status : \(appDelegate.disconnectStatus)")
+        // 切断状況に応じてトーストを出力する
+        switch appDelegate.disconnectStatus {
+        // 想定外の切断のとき
+        case 0:
+            showToast(message: "接続消失")
+        // 意図的な切断のとき
+        case 1:
+            showToast(message: "切断完了")
+        // 接続失敗による切断のとき
+        case 2:
+            showToast(message: "接続失敗")
+        default:
+            print("DISCONNECT ERROR")
+        }
+        // 切断状況変数を初期化する
+        appDelegate.disconnectStatus = 0
         // ラベルを初期化する
         connectDevice.text = "Connection : "
         // メニューを隠す
@@ -1013,6 +1031,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         appDelegate.centralManager = CBCentralManager()
         appDelegate.settingCharacteristic = nil
         appDelegate.outputCharacteristic = nil
+    }
+    
+    // ペリフェラルへの接続に失敗したときに呼ばれるイベント
+    @objc func timeOut() {
+        print("time out")
+        // 接続失敗
+        appDelegate.disconnectStatus = 2
+        // 通信を切断する
+        appDelegate.centralManager.cancelPeripheralConnection(appDelegate.peripheral)
     }
     
     /* Peripheral関連メソッド */

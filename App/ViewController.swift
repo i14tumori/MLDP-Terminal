@@ -1738,7 +1738,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    // 同一行の文字列を詰める関数
+    // 同一行の文字列を詰める関数 (未使用)
     // point : 指定行の先頭
     func slideText(_ point: Int) {
         print("--- slideText ---")
@@ -1761,7 +1761,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    // 指定位置の文字列に直下文字列を加える関数
+    // 指定位置の文字列に直下文字列を加える関数 (未使用)
     // point : 指定位置
     func addUnderLine(_ point: Int) {
         print("--- addUnderLine ---")

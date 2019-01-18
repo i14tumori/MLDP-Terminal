@@ -90,6 +90,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 通知変数
     let notification = NotificationCenter.default
     
+    // プライバシーポリシーURL
+    let policyLink = "https://github.com/i14tumori/MLDP-Terminal/blob/master/README.md"
+    
     // エスケープシーケンス判断用フラグ
     var escSeq = 0
     // エスケープシーケンス変位記憶変数
@@ -143,6 +146,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var menu: UIButton!
     @IBOutlet weak var menuBackView: UIView!
     @IBOutlet weak var connectDevice: UILabel!
+    @IBOutlet weak var policy: UIButton!
     
     // AppDelegate内の変数呼び出し用
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
@@ -356,7 +360,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @objc func keyboardWillHide(notification: Notification?) {
         print("--- keyboardWillHide ---")
         // 初期の位置に戻す
-        textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: self.view.frame.height - textview.frame.origin.y))
+        textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: policy.frame.origin.y - textview.frame.origin.y))
         // 画面サイズを設定する
         setSize()
         // キーボードの高さを取得する
@@ -366,6 +370,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // 基底位置の上限を定める
         if base < 0 {
             base = 0
+        }
+        // カーソルが表示範囲から外れたとき
+        if cursor[0] < base + 1 {
+            base = cursor[0] - 1
+        }
+        else if cursor[0] > base + viewSize[0] {
+            base = cursor[0] - viewSize[0]
         }
         // 書き込み位置を表示する(キーボードが消えることで下に余白ができるのを防ぐための場合分け)
         // スクロールしていたとき
@@ -538,6 +549,26 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         UserDefaults.standard.removeObject(forKey: "DeviceName")
         // トーストを出力する
         showToast(message: "削除完了")
+    }
+    
+    // プライバシーポリシー表示ボタンが押されたとき
+    // sender : 押下ボタン
+    @IBAction func policyTap(_ sender: UIButton) {
+        print("--- policy tapped ---")
+        
+        // リンク先にページが存在するとき
+        if let url = URL(string: policyLink) {
+            if #available(iOS 10.0, *) {
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            }
+            else {
+                UIApplication.shared.openURL(url)
+            }
+        }
+        // リンク先にページが存在しないとき
+        else {
+            showToast(message: "policy not found")
+        }
     }
     
     // トースト出力関数
@@ -2182,55 +2213,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // デバッグ用関数
     func viewChar(_ text: [[textAttr]]) {
-        print("--- viewChar ---")
-        print("cursor : \(cursor)")
-        print("base : \(base)")
-        print("viewSize : \(viewSize)")
-        var sentence = [String]()
-        for row in 0..<allTextAttr.count {
-            for column in 0..<allTextAttr[row].count {
-                if allTextAttr[row][column].previous {
-                    print("p", terminator: "")
-                    sentence[sentence.count - 1].append(allTextAttr[row][column].char)
-                }
-                else {
-                    print("0", terminator: "")
-                    sentence.append(allTextAttr[row][column].char)
-                }
-            }
-            print()
-        }
-        print("sentence")
-        print(sentence)
-        /*
-        let allTextAttr = text
-        var text = [String]()
-        var prev = [[Int]]()
-        for row in 0..<allTextAttr.count {
-            text.append("")
-            for column in 0..<allTextAttr[row].count {
-                /*
-                if allTextAttr[row][column].char == "" {
-                    print("allTextAttr[\(row)][\(column)].char is empty")
-                }
-                */
-                text[text.count - 1].append(allTextAttr[row][column].char)
-                if !allTextAttr[row][column].previous {
-                    prev.append([row + 1, column + 1])
-                }
-            }
-        }
-        */
-         /*
-        print("text")
-        print(text)
-        // /*
-        print("line top")
-        print(prev)
-        // */
-        print("textviewText")
-        print(textview.text)
-        // */
+        
     }
 }
 

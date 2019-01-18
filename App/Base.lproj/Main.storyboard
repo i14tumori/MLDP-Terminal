@@ -18,8 +18,8 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" textAlignment="natural" id="V0c-4c-id7" customClass="CustomTextView" customModule="App" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="84" width="320" height="484"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxX="YES" heightSizable="YES" flexibleMaxY="YES"/>
+                                <rect key="frame" x="0.0" y="84" width="320" height="411"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxX="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences" keyboardType="alphabet"/>
@@ -75,6 +75,14 @@
                                 </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="lVw-lQ-juz">
+                                <rect key="frame" x="209" y="495" width="95" height="40"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMinY="YES"/>
+                                <state key="normal" title="privacy policy"/>
+                                <connections>
+                                    <action selector="policyTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="khq-HB-Lx4"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </view>
@@ -82,12 +90,13 @@
                         <outlet property="connectDevice" destination="pxs-aN-pql" id="6J4-gu-C4P"/>
                         <outlet property="menu" destination="UgW-sE-6uP" id="Hh8-tn-FWj"/>
                         <outlet property="menuBackView" destination="pqo-cn-sbq" id="yO6-i4-fwq"/>
+                        <outlet property="policy" destination="lVw-lQ-juz" id="flA-0e-dHX"/>
                         <outlet property="textview" destination="V0c-4c-id7" id="SZO-kd-ffd"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="124" y="68.7192118226601"/>
+            <point key="canvasLocation" x="121.73913043478262" y="66.84782608695653"/>
         </scene>
         <!--Select Device View Controller-->
         <scene sceneID="JdW-Dn-WNq">

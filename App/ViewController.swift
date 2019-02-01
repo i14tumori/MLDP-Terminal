@@ -13,7 +13,7 @@ extension String {
     // String型を一文字ずつの配列に分解する関数
     // 返り値 : 分割された文字列配列
     func partition() -> [String] {
-        print("--- partition ---")
+//        print("--- partition ---")
         let count = self.count
         var origin = self
         var splitText = [String]()
@@ -27,14 +27,14 @@ extension String {
     // ASCII文字の判定をする関数(ASCIIコードならtrueを返す)
     // 返り値 : ASCII文字 -> true, それ以外 -> false
     func isAlphanumeric(_ text: String) -> Bool {
-        print("--- isAlphanumeric ---")
+//        print("--- isAlphanumeric ---")
         print("return : \(text >= "\u{00}" && text <= "\u{7f}")")
         return text >= "\u{00}" && text <= "\u{7f}"
     }
     // 数字の判定をする関数
     // 返り値 : 数字 -> true, それ以外 -> false
     func isNumeric() -> Bool {
-        print("--- isNumeric ---")
+//        print("--- isNumeric ---")
         let partText = self.partition()
         for i in 0..<self.count {
             if partText[i] < "0" || partText[i] > "9" {
@@ -49,7 +49,7 @@ extension String {
     // font : 使用フォント
     // 返り値 : 文字列の高さ(CGFloat型)
     func getStringHeight(_ font: UIFont) -> CGFloat {
-        print("--- getStringHeight ---")
+//        print("--- getStringHeight ---")
         let attribute = [NSAttributedStringKey.font: font]
         let size = self.size(withAttributes: attribute)
         print("return : \(size.height)")
@@ -59,7 +59,7 @@ extension String {
     // font : 使用フォント
     // 返り値 : 文字列の横幅(CGFloat型)
     func getStringWidth(_ font: UIFont) -> CGFloat {
-        print("--- getStringWidth ---")
+//        print("--- getStringWidth ---")
         let attribute = [NSAttributedStringKey.font: font]
         let size = self.size(withAttributes: attribute)
         print("return : \(size.width)")
@@ -89,6 +89,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 通知変数
     let notification = NotificationCenter.default
+    
+    // 受信タイマー
+    var receiveTimer = Timer()
     
     // プライバシーポリシーURL
     let policyLink = "https://tctsigemura.github.io/MLDPTerminal/privacy.html"
@@ -153,7 +156,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // viewが読み込まれたときのイベント
     override func viewDidLoad() {
-        print("--- viewDidLoad ---")
+//        print("--- viewDidLoad ---")
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
@@ -186,7 +189,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // viewを表示する前のイベント
     override func viewWillAppear(_ animated: Bool) {
-        print("--- viewWillAppear ---")
+//        print("--- viewWillAppear ---")
         super.viewWillAppear(true)
         
         // 画面サイズを再設定する
@@ -202,7 +205,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // viewが消える前のイベント
     override func viewWillDisappear(_ animated: Bool) {
-        print("--- viewWillDisappear ---")
+//        print("--- viewWillDisappear ---")
         super.viewWillDisappear(true)
         
         // Notificationを削除する
@@ -210,7 +213,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     override func didReceiveMemoryWarning() {
-        print("--- didReceivememoryWarning ---")
+//        print("--- didReceivememoryWarning ---")
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
@@ -219,20 +222,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // タッチ開始時のイベント
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        print("--- touches began ---")
+//        print("--- touches began ---")
         // キーボードを閉じる
         keyboardDown()
     }
     
     // キーボードを閉じる関数
     @objc func keyboardDown() {
-        print("--- keyboardDown ---")
+//        print("--- keyboardDown ---")
         self.view.endEditing(true)
     }
     
     // 画面をスクロールさせる関数
     @objc func pan(sender: UIPanGestureRecognizer) {
-        print("--- pan ---")
+//        print("--- pan ---")
         // 移動後の相対位置を取得する
         let location = sender.translation(in: self.view)
         print("location : \(location)")
@@ -268,7 +271,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textViewの入力値を取得し、カーソル位置に追記する関数
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        print("--- textView Edit ---")
+//        print("--- textView Edit ---")
         
         // ペリフェラルと接続されていないとき
         if appDelegate.outputCharacteristic == nil {
@@ -302,7 +305,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // Notificationを設定する関数
     func configureObserver() {
-        print("--- configureObserver ---")
+//        print("--- configureObserver ---")
         // キーボード出現の検知
         notification.addObserver(self, selector: #selector(keyboardWillShow(notification:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
         // キーボード終了の検知
@@ -313,13 +316,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // Notificationを削除する関数
     func removeObserver() {
-        print("--- removeObserver ---")
+//        print("--- removeObserver ---")
         notification.removeObserver(self)
     }
     
     // キーボードが現れるときに画面をずらす関数
     @objc func keyboardWillShow(notification: Notification?) {
-        print("--- keyboardWillShow ---")
+//        print("--- keyboardWillShow ---")
         print("pre base : \(base)")
         // キーボードの高さを取得する
         let keyboardHeight = (notification?.userInfo![UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.height
@@ -358,7 +361,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // キーボードが消えるときに画面を戻す関数
     @objc func keyboardWillHide(notification: Notification?) {
-        print("--- keyboardWillHide ---")
+//        print("--- keyboardWillHide ---")
         // 初期の位置に戻す
         textview.frame = CGRect(origin: textview.frame.origin, size: CGSize(width: self.view.frame.width, height: policy.frame.origin.y - textview.frame.origin.y))
         // 画面サイズを設定する
@@ -394,7 +397,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 画面が回転したときに呼ばれる関数
     @objc func onOrientationChange(notification: Notification?) {
-        print("--- onOrientationChange ---")
+//        print("--- onOrientationChange ---")
         // 画面サイズを一時保存する
         let tempSize = viewSize
         // 画面サイズを設定する
@@ -456,7 +459,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // メニューが押されたとき
     // sender : 押下ボタン
     @IBAction func menuTap(_ sender: UIButton) {
-        print("--- menu button tapped ---")
+//        print("--- menu button tapped ---")
         // 表示非表示を切り替える
         tapCount = (tapCount + 1) % 2
         print("tapCount : \(tapCount)")
@@ -480,7 +483,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // メニューを隠す関数
     // second : 表示アニメーションの秒数
     func hideMenu(duration second: Float) {
-        print("--- hideMenu ---")
+//        print("--- hideMenu ---")
         // メニューを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
             self.menuBackView.frame.origin.x = -self.menuBackView.frame.size.width
@@ -499,7 +502,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // メニューを表示する関数
     // second : 表示アニメーションの秒数
     func showMenu(duration second: Float) {
-        print("--- showMenu ---")
+//        print("--- showMenu ---")
         // デバイスラベルを移動させる
         UIView.animate(withDuration: TimeInterval(second)) {
             self.connectDevice.frame.origin.x = -self.connectDevice.frame.size.width
@@ -518,13 +521,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // scanButtonが押されたとき
     // sender : 押下ボタン
     @IBAction func scanTap(_ sender: UIButton) {
-        print("--- scan button tapped ---")
+//        print("--- scan button tapped ---")
     }
     
     // disconButtonが押されたとき
     // sender : 押下ボタン
     @IBAction func disconTap(_ sender: UIButton) {
-        print("--- disconnect button tapped ---")
+//        print("--- disconnect button tapped ---")
         
         // ペリフェラルと接続されていないとき
         if appDelegate.outputCharacteristic == nil {
@@ -544,7 +547,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // deleteButtonが押されたとき
     // sender : 押下ボタン
     @IBAction func delTap(_ sender: UIButton) {
-        print("--- deviceDelete button tapped ---")
+//        print("--- deviceDelete button tapped ---")
         // 記憶デバイスを消去する
         UserDefaults.standard.removeObject(forKey: "DeviceName")
         // トーストを出力する
@@ -554,7 +557,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // プライバシーポリシー表示ボタンが押されたとき
     // sender : 押下ボタン
     @IBAction func policyTap(_ sender: UIButton) {
-        print("--- policy tapped ---")
+//        print("--- policy tapped ---")
         
         // リンク先にページが存在するとき
         if let url = URL(string: policyLink) {
@@ -605,7 +608,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 画面サイズを設定する関数
     // resize : 配列の再作成判定
     func setSize(resize: Bool = true) {
-        print("--- setSize ---")
+//        print("--- setSize ---")
         // 最大行数
         let row = Int(floor((textview.frame.height - textview.layoutMargins.top - textview.layoutMargins.bottom) / " ".getStringHeight(textview.font!)))
         // 最大桁数
@@ -627,7 +630,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 追加ボタンESCが押されたとき
     @objc func escTapped() {
-        print("--- esc ---")
+//        print("--- esc ---")
         buttonColorChange(button: escButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
@@ -639,7 +642,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 追加ボタンCtrlが押されたとき
     @objc func ctrlTapped() {
-        print("--- ctrl ---")
+//        print("--- ctrl ---")
         // コントロールキーフラグを反転させる
         ctrlKey.toggle()
         // コントロールボタンの背景を変更する
@@ -657,7 +660,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 追加ボタンtabが押されたとき
     @objc func tabTapped() {
-        print("--- tab ---")
+//        print("--- tab ---")
         buttonColorChange(button: tabButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
@@ -669,7 +672,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 追加ボタン↑が押されたとき
     @objc func upTapped() {
-        print("--- up ---")
+//        print("--- up ---")
         buttonColorChange(button: upButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
@@ -681,7 +684,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 追加ボタン↓が押されたとき
     @objc func downTapped() {
-        print("--- down ---")
+//        print("--- down ---")
         buttonColorChange(button: downButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
@@ -693,7 +696,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 追加ボタン←が押されたとき
     @objc func leftTapped() {
-        print("--- left ---")
+//        print("--- left ---")
         buttonColorChange(button: leftButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
@@ -705,7 +708,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 追加ボタン→が押されたとき
     @objc func rightTapped() {
-        print("--- right ---")
+//        print("--- right ---")
         buttonColorChange(button: rightButton)
         // ペリフェラルとつながっていないときは何もしない
         if appDelegate.outputCharacteristic == nil {
@@ -730,7 +733,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 上にn移動する関数
     // n : 変位
     func escUp(n: Int) {
-        print("--- escUp ---")
+//        print("--- escUp ---")
         print("n : \(n)")
         let column = cursor[1] - 1
         escUpTop(n: n)
@@ -740,7 +743,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 下にn移動する関数
     // n : 変位
     func escDown(n: Int) {
-        print("--- escDown ---")
+//        print("--- escDown ---")
         print("n : \(n)")
         let column = cursor[1] - 1
         escDownTop(n: n)
@@ -750,7 +753,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 右にn移動する関数
     // n : 変位
     func escRight(n: Int) {
-        print("--- escRight ---")
+//        print("--- escRight ---")
         print("n : \(n)")
         print("cursor : \(cursor)")
         // 移動がないとき(n = 0)
@@ -787,13 +790,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // カーソル文字を追加する
             allTextAttr[cursor[0] - 1].append(textAttr(char: "_", color: currColor))
         }
-        refresh()
     }
     
     // 左にn移動する関数
     // n : 変位
     func escLeft(n: Int) {
-        print("--- escLeft ---")
+//        print("--- escLeft ---")
         print("n : \(n)")
         // 移動がないとき(n = 0)
         if n == 0 {
@@ -814,13 +816,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // カーソルをずらす
         cursor[1] = cursor[1] - move
-        refresh()
     }
     
     // n行下の先頭に移動する関数
     // n : 変位
     func escDownTop(n: Int) {
-        print("--- escDownTop ---")
+//        print("--- escDownTop ---")
         print("n : \(n)")
         // カーソル文字を削除する
         if curIsSentenceEnd() {
@@ -849,13 +850,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             // カーソル文字を追加する
             allTextAttr[cursor[0] - 1] = [textAttr(char: "_", color: currColor, previous: false)]
         }
-        refresh()
     }
     
     // n行上の先頭に移動する関数
     // n : 変位
     func escUpTop(n: Int) {
-        print("--- escUpTop ---")
+//        print("--- escUpTop ---")
         print("n : \(n)")
         // カーソル文字を削除する
         if curIsSentenceEnd() {
@@ -881,14 +881,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             allTextAttr[cursor[0] - 1][cursor[1] - 1] = textAttr(char: "_", color: currColor, previous: false)
         }
         print("cursor[0] : \(cursor[0])")
-        refresh()
     }
     
     // 現在位置と関係なく上からn、左からmの場所に移動する関数
     // n : 変位
     // m : 変位
     func escRoot(n: Int, m: Int) {
-        print("--- escRoot ---")
+//        print("--- escRoot ---")
         print("n : \(n), m : \(m)")
         // カーソルを上に移動させるとき
         if cursor[0] >= n {
@@ -908,7 +907,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // n : 消去範囲指定
     // 0 : カーソルより後ろを消去する, 1 : カーソルより前を消去する, 2 : 画面全体を消去する
     func escViewDelete(n: Int) {
-        print("--- escViewDelete ---")
+//        print("--- escViewDelete ---")
         print("n : \(n)")
         print("base : \(base)")
         switch n {
@@ -955,7 +954,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // n : 消去範囲指定
     // 0 : カーソルより後ろを消去する, 1 : カーソルより前を消去する, 2 : 行全体を消去する
     func escLineDelete(n: Int) {
-        print("--- escLineDelete ---")
+//        print("--- escLineDelete ---")
         print("n : \(n)")
         print("cursor : \(cursor)")
         switch n {
@@ -1174,6 +1173,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         var tempSaveData = dataString!
         // 複数文字届いたときは一字ずつ処理する
         for _ in 0..<tempSaveData.count {
+            
+            // 受信タイマーを破棄する
+            receiveTimer.invalidate()
+            
             // 最初の一文字だけ取り出す
             dataString = String(tempSaveData.prefix(1))
             tempSaveData = String(tempSaveData.suffix(tempSaveData.count - 1))
@@ -1485,11 +1488,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // textViewに読み込みデータを書き込む
                 writeTextView(dataString!)
             }
-            // 表示する
-            view()
-            // スクロール基底を初期化する
-            viewBase = -1
+            // 受信タイマーを生成する
+            receiveTimer = Timer.scheduledTimer(timeInterval: 0.001, target: self, selector: #selector(messageReceive), userInfo: nil, repeats: false)
         }
+    }
+    
+    // 受信完了後に表示する関数
+    @objc func messageReceive() {
+        print("--- messageReceive ---")
+        // 表示する
+        view()
+        // スクロール基底を初期化する
+        viewBase = -1
     }
     
     // textview内のカーソル位置に文字を書き込む関数
@@ -1599,11 +1609,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    
     // ペリフェラルに文字を書き込む関数
     // txStr : 書き込む文字
     func writePeripheral(_ txStr: String) {
-        print("--- writePeripheral ---")
+//        print("--- writePeripheral ---")
         if var txData = txStr.data(using: .utf8) {
             // コントロールキーを押しているとき
             if ctrlKey {
@@ -1630,7 +1639,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // カーソル位置の一つ前の文字を削除する関数 (未使用)
     func deleteTextView() {
-        print("--- deleteTextView ---")
+//        print("--- deleteTextView ---")
         var slide = false
         // カーソル前に文字があるとき
         if cursor[1] > 1 {
@@ -1741,7 +1750,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 同一行の文字列を詰める関数 (未使用)
     // point : 指定行の先頭
     func slideText(_ point: Int) {
-        print("--- slideText ---")
+//        print("--- slideText ---")
         print("point : \(point)")
         addUnderLine(point + 1)
         // 下に行があるだけ繰り返す
@@ -1764,7 +1773,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 指定位置の文字列に直下文字列を加える関数 (未使用)
     // point : 指定位置
     func addUnderLine(_ point: Int) {
-        print("--- addUnderLine ---")
+//        print("--- addUnderLine ---")
         print("point : \(point)")
         // 追記できる文字数
         let count = viewSize[1] - allTextAttr[point - 1].count
@@ -1796,7 +1805,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // 文字色を変更する関数
     // color : 変更する色
     func changeColor(color: Int) {
-        print("--- changeColor ---")
+//        print("--- changeColor ---")
         switch color {
         case 30:
             currColor = UIColor.black
@@ -1824,6 +1833,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("cursor : \(cursor)")
         print("scroll : \(scroll)")
         print("pre base : \(base)")
+        
+        print("View Thread : \(Thread.isMainThread)")
         
         let text = NSMutableAttributedString()
         var attributes: [NSAttributedStringKey : Any]
@@ -1880,7 +1891,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // カーソルの最後尾判断をする関数
     // 返り値 : 最後尾 -> true, それ以外 -> false
     func curIsEnd() -> Bool {
-        print("--- curIsEnd ---")
+//        print("--- curIsEnd ---")
         print("cursor : \(cursor)")
         
         // カーソルが最後尾を示しているとき
@@ -1895,7 +1906,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // カーソルの文末判断をする関数
     // 返り値 : 文末->true, それ以外->false
     func curIsSentenceEnd() -> Bool {
-        print("--- curIsSentenceEnd ---")
+//        print("--- curIsSentenceEnd ---")
         print("cursor : \(cursor)")
         
         // カーソルが文末を示しているとき
@@ -1910,7 +1921,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // カーソルの示す文字を取得する関数
     // 返り値 : カーソルの示す文字
     func getCurrChar() -> String {
-        print("--- getCurrChar ---")
+//        print("--- getCurrChar ---")
         print("cursor : \(cursor)")
         print("return : \(allTextAttr[cursor[0] - 1][cursor[1] - 1].char)")
         // カーソルの示す位置の文字を返す
@@ -1920,19 +1931,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // カーソルの示す位置のprevious属性を取得する関数
     // 返り値 : previous属性値(Bool型)
     func getCurrPrev() -> Bool {
-        print("--- getCurrPrev ---")
+//        print("--- getCurrPrev ---")
         print("cursor : \(cursor)")
         print("return : \(allTextAttr[cursor[0] - 1][cursor[1] - 1].previous)")
         // カーソルの示す位置のprevious属性を返す
         return allTextAttr[cursor[0] - 1][cursor[1] - 1].previous
     }
     
-    // textAttr配列の空白文字を削除する関数
+    // textAttr配列の空白文字を削除する関数 (未使用)
     // text : 対象配列
     // limit : 削除制限数
     // 返り値 : 空白が削除されたtextAttr配列
     func delSpace(_ text: [textAttr], _ limit: Int) -> [textAttr] {
-        print("--- delSpace ---")
+//        print("--- delSpace ---")
         var delText = text
         var count = text.count
         // 最後の文字が空白かつ制限内のとき
@@ -1947,12 +1958,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return delText
     }
     
-    // textAttr配列の文字列が空白のみかを判定する関数(空文字はfalse)
+    // textAttr配列の文字列が空白のみかを判定する関数(空文字はfalse) (未使用)
     // text : 対象配列
     // 返り値 : 空白のみ->true, それ以外->false
     func isNone(_ text: [textAttr]) -> Bool {
         var checkText = text
-        print("--- isNone ---")
+//        print("--- isNone ---")
         // 列数だけ繰り返す
         for _ in 0..<checkText.count {
             // 最後の文字が空白でないとき
@@ -1965,9 +1976,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return true
     }
     
-    // allTextAttr内を整える関数
+    // allTextAttr内を整える関数 (未使用)
     func refresh() {
-        print("--- refresh ---")
+//        print("--- refresh ---")
         viewChar(allTextAttr)
         var refreshText = [[textAttr]]()
         // 空白文字列の削除
@@ -2019,7 +2030,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // allTextAttr配列をviewSizeの大きさで作り変える関数
     func textResize() {
-        print("--- textResize ---")
+//        print("--- textResize ---")
         print("viewSize : \(viewSize)")
         print("cursor : \(cursor)")
         viewChar(allTextAttr)
@@ -2069,7 +2080,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // @discardableResult : 返り値を使用しないことを許す
     @discardableResult
     func textLineUnit(sizeChange: Bool = false) -> Int {
-        print("--- textLineUnit ---")
+//        print("--- textLineUnit ---")
         print("preChar")
         viewChar(allTextAttr)
         var newBase = 0
@@ -2116,7 +2127,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // textviewをクリアする関数
     func clear() {
-        print("--- clear ---")
+//        print("--- clear ---")
         // 色を初期化する
         currColor = UIColor.black
         // テキストの記憶を初期化する
@@ -2147,7 +2158,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // 追加キーボードボタンを初期化する関数
     func textKeyInit() {
-        print("--- textKeyInit ---")
+//        print("--- textKeyInit ---")
         // ボタンを追加するViewの設定
         keyboard.axis = .horizontal
         keyboard.alignment = .center

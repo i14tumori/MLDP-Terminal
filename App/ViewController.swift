@@ -1488,9 +1488,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 // textViewに読み込みデータを書き込む
                 writeTextView(dataString!)
             }
-            // 受信タイマーを生成する
-            receiveTimer = Timer.scheduledTimer(timeInterval: 0.001, target: self, selector: #selector(messageReceive), userInfo: nil, repeats: false)
         }
+        // 受信タイマーを生成する
+         receiveTimer = Timer.scheduledTimer(timeInterval: 0.01, target: self, selector: #selector(messageReceive), userInfo: nil, repeats: false)
     }
     
     // 受信完了後に表示する関数
